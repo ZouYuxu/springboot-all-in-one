@@ -1,0 +1,8 @@
+{
+  "base": ["brand", "product"],
+  "type": ["grade", "point"],
+  "mon": [10, 11, 12, 12, 12],
+  "class": ["cost", "cost", "cost", "cost", "cost"],
+  "className": ["成本", "成本", "成本", "成本", "成本"],
+  "plant": ["F213", "F214", "F215", "F216", "F217"]
+}

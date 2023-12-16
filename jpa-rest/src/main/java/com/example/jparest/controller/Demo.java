@@ -6,6 +6,7 @@ import com.example.jparest.service.LibraryService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -19,8 +20,6 @@ public class Demo {
     }
 
     @PostMapping("books")
-    @SneakyThrows
-
     public ResponseEntity<Book> createBook(@RequestBody BookCreationRequest request) {
 
         Book book = libraryService.createBook(request);
