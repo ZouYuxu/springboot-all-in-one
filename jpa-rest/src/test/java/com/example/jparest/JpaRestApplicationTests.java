@@ -100,7 +100,7 @@ class JpaRestApplicationTests {
         String step = "[1.0].Read template";
         byte[] bytes = FileUtil.readBytes("template" + File.separator + "easy.xlsx");
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(bytes));
-             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+             FileOutputStream outputStream = new FileOutputStream(destFilePath)) {
             XSSFSheet sheet = wb.getSheet("easy");
             // 先列后行，这样可以方便生成
             for (int columnIndex = 0; columnIndex < sheet.getRow(0).getLastCellNum(); columnIndex++) {
@@ -116,6 +116,7 @@ class JpaRestApplicationTests {
 
                             // 变量，需要替换
                             if (value.startsWith("{")) {
+
                                 String variable = value.substring(1, value.length() - 1);
                                 // 表示数组
                                 if (variable.startsWith("...#")) {
@@ -125,11 +126,20 @@ class JpaRestApplicationTests {
                                         continue;
                                     }
                                     if (arr.isArray()) {
+                                        int i = 0;
                                         for (JsonNode jsonNode : arr) {
                                             String text = jsonNode.asText();
+                                            if (i == 0) {
+                                                i += 1;
+                                                cell.setCellValue(text);
+
+                                            } else {
+//                                                sheet.shiftColumns(columnIndex, sheet.getRow(0).getLastCellNum() -1, 1);
+
+//                                                ExcelUtil.copyColumn(sheet, columnIndex, columnIndex + 1, text);
+                                            }
 //                                            System.out.println(text + " 0_0");
                                             log.info("++ {}", text);
-//                                            ExcelUtil.copyColumn(sheet, rowIndex, rowIndex + 1);
                                         }
                                     }
                                     log.info("{} ---", newStr);
@@ -147,7 +157,9 @@ class JpaRestApplicationTests {
                 }
 
             }
-            wb.write(outputStream);
+                wb.write(outputStream);
+//            outputStream.close();
+            wb.close();
         } catch (Exception e) {
             throw new Exception(step + "生成Excel发生错误！", e);
         }
