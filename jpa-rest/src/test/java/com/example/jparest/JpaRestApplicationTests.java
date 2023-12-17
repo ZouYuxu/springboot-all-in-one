@@ -71,7 +71,7 @@ class JpaRestApplicationTests {
             }
 //            XSSFSheet sheet = wb.getSheet("easy");
 //            wb.sethi
-            ExcelUtil.copyColumn(sheet, 0, 0 + 1);
+//            ExcelUtil.copyColumn(sheet, 0, 0 + 1);
 //            String stringCellValue = sheet.getRow(0).getCell(0).getStringCellValue();
 //            System.out.println(stringCellValue);
 
@@ -102,7 +102,7 @@ class JpaRestApplicationTests {
              FileOutputStream outputStream = new FileOutputStream(destFilePath)) {
             XSSFSheet sheet = wb.getSheet("easy");
             XSSFSheet destSheet = newBook.createSheet("test");
-            int destColumnIndex = 0;
+            int dataListRow = 0;
             // 先列后行，这样可以方便生成
             for (int columnIndex = 0; columnIndex < sheet.getRow(0).getLastCellNum(); columnIndex++) {
                 // 遍历每个单元格
@@ -148,6 +148,15 @@ class JpaRestApplicationTests {
 //                                        return;
                                     }
                                     log.info("{} ---", newStr);
+                                } else if (variable.contains("#")) {
+                                    dataListRow = rowIndex;
+                                    ArrayList<String> strings = new ArrayList<>();
+                                    JsonNode className = var.get("className");
+                                    for (JsonNode jsonNode : className) {
+                                        String s = jsonNode.asText();
+                                        strings.add(s);
+                                    }
+                                    lists.add(strings);
                                 } else {
                                     lists.add(List.of(variable));
                                 }
@@ -167,10 +176,10 @@ class JpaRestApplicationTests {
 
                 int index = 0;
 
-                iter(lists, new LinkedList<>(), index, sheet, destSheet, columnIndex, ind);
+                iter(lists, new LinkedList<>(), index, sheet, destSheet, ind, dataListRow);
 
             }
-                newBook.write(outputStream);
+            newBook.write(outputStream);
             outputStream.close();
             wb.close();
         } catch (Exception e) {
@@ -178,9 +187,9 @@ class JpaRestApplicationTests {
         }
     }
 
-    private static void iter(List<List<String>> lists, LinkedList<String> list, int index, Sheet sourceSheet, Sheet targetSheet, int sourceColumnIndex, int targetColumnIndex) {
-        if (index == lists.size()) {
-            ExcelUtil.copyColumn(sourceSheet, targetSheet, sourceColumnIndex, ind++, list);
+    private static void iter(List<List<String>> lists, LinkedList<String> list, int index, Sheet sourceSheet, Sheet targetSheet, int sourceColumnIndex, int dataListRow) {
+        if (index == dataListRow) {
+            ExcelUtil.copyColumn(sourceSheet, targetSheet, sourceColumnIndex, ind++, list, dataListRow);
 //            targetColumnIndex++;
 
             System.out.println(list.toString() + "-" + ind);
@@ -189,7 +198,7 @@ class JpaRestApplicationTests {
         List<String> strings = lists.get(index);
         for (String string : strings) {
             list.add(string);
-            iter(lists, list, index + 1, sourceSheet, targetSheet, sourceColumnIndex, targetColumnIndex);
+            iter(lists, list, index + 1, sourceSheet, targetSheet, sourceColumnIndex, dataListRow);
             list.pollLast();
         }
     }

@@ -1,13 +1,13 @@
 package com.example.jparest.utils;
 
-import lombok.Value;
 import org.apache.poi.ss.usermodel.*;
 
+import java.util.LinkedList;
 import java.util.List;
 
 public class ExcelUtil {
 
-    public static void copyCell(Cell sourceCell, Cell targetCell, String value) {
+    public static void copyCell(Cell sourceCell, Cell targetCell, String value, int dataListRow) {
         if (sourceCell == null || targetCell == null) {
             return;
         }
@@ -39,19 +39,24 @@ public class ExcelUtil {
         }
     }
 
-    public static void copyColumn(Sheet sheet, int sourceColumnIndex, int targetColumnIndex) {
-        copyColumn(sheet, sourceColumnIndex, targetColumnIndex, -1, null);
+    public static void copyColumn(Sheet sheet, Sheet targetSheet, int sourceColumnIndex, int targetColumnIndex, LinkedList<String> list) {
+        copyColumn(sheet, targetSheet, sourceColumnIndex, targetColumnIndex, null, -1);
     }
 
-    public static void copyColumn(Sheet sourceSheet, Sheet targetSheet, int sourceColumnIndex, int targetColumnIndex) {
+    public static void copyColumn(Sheet sourceSheet, Sheet targetSheet, int sourceColumnIndex, int targetColumnIndex, int dataListRow) {
     }
 
     // copy column from one sheet to another
-    public static void copyColumn(Sheet sourceSheet, Sheet targetSheet, int sourceColumnIndex, int targetColumnIndex, List<String> list) {
-        for (int i = 0; i < sourceSheet.getPhysicalNumberOfRows(); i++) {
-            Row sourceRow = sourceSheet.getRow(i);
+    public static void copyColumn(Sheet sourceSheet, Sheet targetSheet, int sourceColumnIndex, int targetColumnIndex, List<String> list, int dataListRow) {
+        int i = 0;
+        List<String> ss = List.of("我真的", "kusi");
+
+        for (; i < dataListRow + ss.size(); i++) {
+            boolean flag = i >= dataListRow;
+            int index = i - dataListRow;
+            Row sourceRow = sourceSheet.getRow(flag ? dataListRow : i);
             Row targetRow = targetSheet.getRow(i);
-            String newValue = list.get(i);
+            String newValue = flag ? ss.get(index) : list.get(i);
             // fix bug：brand column missing
             if (targetRow == null) {
                 targetRow = targetSheet.createRow(i);
@@ -59,10 +64,15 @@ public class ExcelUtil {
             if (sourceRow != null) {
                 Cell sourceCell = sourceRow.getCell(sourceColumnIndex);
                 Cell newCell = targetRow.createCell(targetColumnIndex);
-                copyCell(sourceCell, newCell, newValue);
+                copyCell(sourceCell, newCell, newValue, dataListRow);
             }
         }
 
+//        List<String> ss = List.of("我真的", "kusi");
+//        String s = list.get(dataListRow);
+//        for (; i < dataListRow ; i++) {
+//            copyCell(sourceCell, newCell, newValue, dataListRow);
+//        }
     }
 
     // todo text可以不用传递过来，之后再赋值也可以
@@ -89,7 +99,7 @@ public class ExcelUtil {
             Cell sourceCell = (row.getCell(newSourceColumnIndex) != null) ? row.getCell(newSourceColumnIndex) : null;
 
             // 复制单元格
-            copyCell(sourceCell, targetCell, textRowIndex == rowIndex ? newValue : null);
+            copyCell(sourceCell, targetCell, textRowIndex == rowIndex ? newValue : null, -1);
         }
     }
 
