@@ -1,5 +1,6 @@
 package com.example.jparest;
 
+import ch.qos.logback.classic.turbo.MarkerFilter;
 import cn.hutool.core.convert.Convert;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.resource.ResourceUtil;
@@ -11,11 +12,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Test;
+import org.junit.platform.commons.logging.LoggerFactory;
 import org.jxls.common.Context;
 import org.jxls.util.JxlsHelper;
 import org.springframework.core.io.ClassPathResource;
@@ -23,6 +28,7 @@ import org.springframework.core.io.ClassPathResource;
 import java.io.*;
 import java.util.List;
 
+@Slf4j
 class JpaRestApplicationTests {
 
     ObjectMapper mapper = new ObjectMapper();
@@ -87,24 +93,23 @@ class JpaRestApplicationTests {
 
     @Test
     public void downloadEvaluationAnalyse() throws Exception {
-
         ObjectMapper mapper = new ObjectMapper();
         InputStream inputStream = new ClassPathResource("var.json").getInputStream();
         JsonNode var = mapper.readTree(inputStream);
-
 
         String step = "[1.0].Read template";
         byte[] bytes = FileUtil.readBytes("template" + File.separator + "easy.xlsx");
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(bytes));
              ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-            XSSFSheet sheet = wb.cloneSheet(0, "mock");
-            for (int rowIndex = 0; rowIndex < sheet.getLastRowNum(); rowIndex++) {
-                XSSFRow row = sheet.getRow(rowIndex);
-                if (row != null) {
-                    // todo 是否要先列后行，这样可以方便生成
-                    // 遍历每个单元格
-                    for (int cellIndex = 0; cellIndex < row.getLastCellNum(); cellIndex++) {
-                        Cell cell = row.getCell(cellIndex);
+            XSSFSheet sheet = wb.getSheet("easy");
+            // 先列后行，这样可以方便生成
+            for (int columnIndex = 0; columnIndex < sheet.getRow(0).getLastCellNum(); columnIndex++) {
+                // 遍历每个单元格
+                for (int rowIndex = 0; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+                    XSSFRow row = sheet.getRow(rowIndex);
+
+                    if (row != null) {
+                        Cell cell = row.getCell(columnIndex);
 
                         if (cell != null) {
                             String value = getCellValue(cell);
@@ -122,20 +127,21 @@ class JpaRestApplicationTests {
                                     if (arr.isArray()) {
                                         for (JsonNode jsonNode : arr) {
                                             String text = jsonNode.asText();
-                                            System.out.println(text + " 0_0");
-
-                                            ExcelUtil.copyColumn(sheet, cellIndex, cellIndex + 1);
+//                                            System.out.println(text + " 0_0");
+                                            log.info("++ {}", text);
+//                                            ExcelUtil.copyColumn(sheet, rowIndex, rowIndex + 1);
                                         }
                                     }
-                                    System.out.println(newStr + "---");
+                                    log.info("{} ---", newStr);
                                 }
-
-                                System.out.println(variable);
+                                log.info(variable);
+//                                System.out.println(variable);
                             }
 
 
                             // 输出单元格内容
-                            System.out.println("[" + rowIndex + "," + cellIndex + "]: " + value);
+                            log.info("[{}, {}]: {}", rowIndex, columnIndex, value);
+//                            System.out.println("[" + rowIndex + "," + columnIndex + "]: " + value);
                         }
                     }
                 }

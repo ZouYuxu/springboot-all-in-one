@@ -4,6 +4,8 @@ import cn.hutool.core.convert.Convert;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.core.lang.TypeReference;
+import cn.hutool.poi.excel.ExcelReader;
+import cn.hutool.poi.excel.ExcelUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.enums.WriteDirectionEnum;
@@ -17,7 +19,6 @@ import com.example.jparest.handler.CustomCellWriteHandler;
 import com.example.jparest.handler.CustomConverterHandler;
 import com.example.jparest.model.Book;
 import com.example.jparest.model.request.BookCreationRequest;
-import com.example.jparest.utils.ExcelUtil;
 import com.example.jparest.utils.TestFileUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -44,6 +45,19 @@ class DownloadTest {
     // 路径
     String result = TestFileUtil.getPath() + "template/easyResult.xlsx";
     String template = TestFileUtil.getPath() + "template/easy.xlsx";
+
+
+    @Test
+    void t() {
+        ExcelReader reader = ExcelUtil.getReader(template, "easy");
+        List<Object> easy = reader.readColumn(0, 0);
+        Object o = reader.readCellValue(0, 1);
+//        reader.rea
+        System.out.println();
+//        reader.getWriter().write
+//        ExcelUtil.
+    }
+
     @Test
     void excelWrite() {
         ExcelWriter excelWriter = null;

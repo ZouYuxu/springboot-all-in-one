@@ -1,14 +1,23 @@
 package com.example.jparest.handler;
 
+import com.alibaba.excel.metadata.Head;
 import com.alibaba.excel.util.BooleanUtils;
 import com.alibaba.excel.write.handler.CellWriteHandler;
 import com.alibaba.excel.write.handler.context.CellWriteHandlerContext;
 import com.alibaba.excel.write.metadata.holder.WriteSheetHolder;
+import com.alibaba.excel.write.metadata.holder.WriteTableHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 
+import java.util.Collections;
+
 @Slf4j
 public class CustomCellWriteHandler implements CellWriteHandler {
+
+    @Override
+    public void beforeCellCreate(WriteSheetHolder writeSheetHolder, WriteTableHolder writeTableHolder, Row row, Head head, Integer columnIndex, Integer relativeRowIndex, Boolean isHead) {
+        log.info("{}-{}",relativeRowIndex, columnIndex);
+    }
 
     @Override
     public void afterCellDispose(CellWriteHandlerContext context) {
@@ -19,6 +28,18 @@ public class CustomCellWriteHandler implements CellWriteHandler {
             Row row = sheet.getRow(0);
 
             int columnIndex = cell.getColumnIndex();
+            String value = cell.getStringCellValue();
+            if (value.startsWith("[")) {
+
+                String cleanedInput = value.substring(1, value.length() - 1);
+
+// 使用逗号分隔字符串并去除空格
+                String[] arr = cleanedInput.split(",\\s*");
+                for (String s : arr) {
+                    copyCell(cell, row, cell.getColumnIndex());
+                }
+                System.out.println(value);
+            }
 //            copyCell(cell, row, columnIndex);
 
         }

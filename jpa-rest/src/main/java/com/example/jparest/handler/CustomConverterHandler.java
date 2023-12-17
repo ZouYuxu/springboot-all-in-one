@@ -6,6 +6,7 @@ import com.alibaba.excel.metadata.GlobalConfiguration;
 import com.alibaba.excel.metadata.data.WriteCellData;
 import com.alibaba.excel.metadata.property.ExcelContentProperty;
 import com.alibaba.excel.util.BooleanUtils;
+import com.alibaba.excel.write.executor.ExcelWriteFillExecutor;
 import com.alibaba.excel.write.handler.CellWriteHandler;
 import com.alibaba.excel.write.handler.context.CellWriteHandlerContext;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +36,7 @@ public class CustomConverterHandler implements Converter<List<String >> {
 
 //        StringUtils.collectionToDelimitedString(list,",","[",)
         String s = value.toString();
-        System.out.println(s);
+//        System.out.println(s);
         return new WriteCellData<>(s);
     }
 
