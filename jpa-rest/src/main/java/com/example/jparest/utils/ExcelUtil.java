@@ -40,14 +40,30 @@ public class ExcelUtil {
     }
 
     public static void copyColumn(Sheet sheet, int sourceColumnIndex, int targetColumnIndex) {
-        copyColumn(sheet, sourceColumnIndex, targetColumnIndex, null);
+        copyColumn(sheet, sourceColumnIndex, targetColumnIndex, -1, null);
     }
 
-    public static void copyColumn(Sheet sheet, int sourceColumnIndex, int targetColumnIndex, String newValue) {
+    // copy column from one sheet to another
+    public static void copyColumn(Sheet sourceSheet, Sheet targetSheet, int sourceColumnIndex, int targetColumnIndex) {
+        for (int i = 0; i < sourceSheet.getPhysicalNumberOfRows(); i++) {
+            Row sourceRow = sourceSheet.getRow(i);
+            Row targetRow = targetSheet.createRow(i);
+            if (sourceRow != null) {
+                Cell sourceCell = sourceRow.getCell(sourceColumnIndex);
+                Cell newCell = targetRow.createCell(targetColumnIndex);
+                copyCell(sourceCell, newCell, null);
+            }
+        }
+
+    }
+
+    // todo text可以不用传递过来，之后再赋值也可以
+    public static void copyColumn(Sheet sheet, int sourceColumnIndex, int targetColumnIndex, int textRowIndex, String newValue) {
         int lastRowNum = sheet.getLastRowNum();
 
         // 向右平移
         sheet.shiftColumns(targetColumnIndex, sheet.getRow(0).getLastCellNum(), 1);
+        int newSourceColumnIndex = sourceColumnIndex + 1;
         for (int rowIndex = 0; rowIndex <= lastRowNum; rowIndex++) {
             Row row = sheet.getRow(rowIndex);
 
@@ -62,10 +78,10 @@ public class ExcelUtil {
             Cell targetCell = row.createCell(insertIndex);
 
             // 获取源单元格
-            Cell sourceCell = (row.getCell(sourceColumnIndex) != null) ? row.getCell(sourceColumnIndex) : null;
+            Cell sourceCell = (row.getCell(newSourceColumnIndex) != null) ? row.getCell(newSourceColumnIndex) : null;
 
             // 复制单元格
-            copyCell(sourceCell, targetCell, newValue);
+            copyCell(sourceCell, targetCell, textRowIndex == rowIndex ? newValue : null);
         }
     }
 

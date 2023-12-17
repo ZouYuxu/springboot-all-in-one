@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -102,6 +103,8 @@ class JpaRestApplicationTests {
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(bytes));
              FileOutputStream outputStream = new FileOutputStream(destFilePath)) {
             XSSFSheet sheet = wb.getSheet("easy");
+            XSSFSheet destSheet = wb.createSheet("test");
+            int destColumnIndex = 0;
             // 先列后行，这样可以方便生成
             for (int columnIndex = 0; columnIndex < sheet.getRow(0).getLastCellNum(); columnIndex++) {
                 // 遍历每个单元格
@@ -127,20 +130,25 @@ class JpaRestApplicationTests {
                                     }
                                     if (arr.isArray()) {
                                         int i = 0;
+                                        int size = arr.size();
                                         for (JsonNode jsonNode : arr) {
-                                            String text = jsonNode.asText();
+                                            String text = arr.get(size - 1 - i).textValue();
                                             if (i == 0) {
-                                                i += 1;
                                                 cell.setCellValue(text);
 
                                             } else {
-//                                                sheet.shiftColumns(columnIndex, sheet.getRow(0).getLastCellNum() -1, 1);
+//                                                sheet.shiftColumns(columnIndex, sheet.getRow(0).getLastCellNum() - 1, 1);
 
-//                                                ExcelUtil.copyColumn(sheet, columnIndex, columnIndex + 1, text);
+                                                // 每次自动copy一列
+                                                ExcelUtil.copyColumn(sheet, destSheet, columnIndex, destColumnIndex);
+                                                destSheet.getRow(rowIndex).getCell(destColumnIndex++).setCellValue(text);
                                             }
 //                                            System.out.println(text + " 0_0");
+                                            i += 1;
                                             log.info("++ {}", text);
                                         }
+                                        wb.write(outputStream);
+                                        return;
                                     }
                                     log.info("{} ---", newStr);
                                 }
@@ -157,7 +165,7 @@ class JpaRestApplicationTests {
                 }
 
             }
-                wb.write(outputStream);
+            wb.write(outputStream);
 //            outputStream.close();
             wb.close();
         } catch (Exception e) {
