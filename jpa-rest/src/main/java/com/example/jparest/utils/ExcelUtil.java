@@ -1,6 +1,9 @@
 package com.example.jparest.utils;
 
+import lombok.Value;
 import org.apache.poi.ss.usermodel.*;
+
+import java.util.List;
 
 public class ExcelUtil {
 
@@ -16,7 +19,7 @@ public class ExcelUtil {
 
         // 根据单元格类型复制数据
         switch (sourceCell.getCellType()) {
-            case BLANK:
+            case BLANK, STRING:
                 targetCell.setCellValue(value != null ? value : sourceCell.getStringCellValue());
                 break;
             case BOOLEAN:
@@ -31,9 +34,6 @@ public class ExcelUtil {
             case NUMERIC:
                 targetCell.setCellValue(sourceCell.getNumericCellValue());
                 break;
-            case STRING:
-                targetCell.setCellValue(sourceCell.getRichStringCellValue());
-                break;
             default:
                 break;
         }
@@ -43,15 +43,23 @@ public class ExcelUtil {
         copyColumn(sheet, sourceColumnIndex, targetColumnIndex, -1, null);
     }
 
-    // copy column from one sheet to another
     public static void copyColumn(Sheet sourceSheet, Sheet targetSheet, int sourceColumnIndex, int targetColumnIndex) {
+    }
+
+    // copy column from one sheet to another
+    public static void copyColumn(Sheet sourceSheet, Sheet targetSheet, int sourceColumnIndex, int targetColumnIndex, List<String> list) {
         for (int i = 0; i < sourceSheet.getPhysicalNumberOfRows(); i++) {
             Row sourceRow = sourceSheet.getRow(i);
-            Row targetRow = targetSheet.createRow(i);
+            Row targetRow = targetSheet.getRow(i);
+            String newValue = list.get(i);
+            // fix bug：brand column missing
+            if (targetRow == null) {
+                targetRow = targetSheet.createRow(i);
+            }
             if (sourceRow != null) {
                 Cell sourceCell = sourceRow.getCell(sourceColumnIndex);
                 Cell newCell = targetRow.createCell(targetColumnIndex);
-                copyCell(sourceCell, newCell, null);
+                copyCell(sourceCell, newCell, newValue);
             }
         }
 

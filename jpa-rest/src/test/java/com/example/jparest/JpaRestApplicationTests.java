@@ -1,6 +1,5 @@
 package com.example.jparest;
 
-import ch.qos.logback.classic.turbo.MarkerFilter;
 import cn.hutool.core.convert.Convert;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.resource.ResourceUtil;
@@ -13,21 +12,18 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
-import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Test;
-import org.junit.platform.commons.logging.LoggerFactory;
 import org.jxls.common.Context;
 import org.jxls.util.JxlsHelper;
 import org.springframework.core.io.ClassPathResource;
 
 import java.io.*;
-import java.util.List;
+import java.util.*;
 
 @Slf4j
 class JpaRestApplicationTests {
@@ -101,16 +97,19 @@ class JpaRestApplicationTests {
         String step = "[1.0].Read template";
         byte[] bytes = FileUtil.readBytes("template" + File.separator + "easy.xlsx");
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(bytes));
+             XSSFWorkbook newBook = new XSSFWorkbook();
              FileOutputStream outputStream = new FileOutputStream(destFilePath)) {
             XSSFSheet sheet = wb.getSheet("easy");
-            XSSFSheet destSheet = wb.createSheet("test");
+            XSSFSheet destSheet = newBook.createSheet("test");
             int destColumnIndex = 0;
             // 先列后行，这样可以方便生成
-            for (int columnIndex = 0; columnIndex < sheet.getRow(0).getLastCellNum(); columnIndex++) {
+            for (int columnIndex = 1; columnIndex < sheet.getRow(0).getLastCellNum(); columnIndex++) {
                 // 遍历每个单元格
+                HashMap<Integer, String> hashMap = new HashMap<>();
+                HashMap<String, Map> map = new HashMap<>();
+                List<List<String>> lists = new ArrayList<>();
                 for (int rowIndex = 0; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
                     XSSFRow row = sheet.getRow(rowIndex);
-
                     if (row != null) {
                         Cell cell = row.getCell(columnIndex);
 
@@ -124,36 +123,46 @@ class JpaRestApplicationTests {
                                 // 表示数组
                                 if (variable.startsWith("...#")) {
                                     String newStr = variable.replaceFirst("...#", "");
+                                    hashMap.put(rowIndex, newStr);
                                     JsonNode arr = var.get(newStr);
                                     if (arr == null) {
                                         continue;
                                     }
                                     if (arr.isArray()) {
-                                        int i = 0;
-                                        int size = arr.size();
+                                        ArrayList<String> strings = new ArrayList<>();
                                         for (JsonNode jsonNode : arr) {
-                                            String text = arr.get(size - 1 - i).textValue();
-                                            if (i == 0) {
-                                                cell.setCellValue(text);
-
-                                            } else {
-//                                                sheet.shiftColumns(columnIndex, sheet.getRow(0).getLastCellNum() - 1, 1);
-
-                                                // 每次自动copy一列
-                                                ExcelUtil.copyColumn(sheet, destSheet, columnIndex, destColumnIndex);
-                                                destSheet.getRow(rowIndex).getCell(destColumnIndex++).setCellValue(text);
-                                            }
-//                                            System.out.println(text + " 0_0");
-                                            i += 1;
-                                            log.info("++ {}", text);
+                                            String s = jsonNode.asText();
+                                            strings.add(s);
                                         }
-                                        wb.write(outputStream);
-                                        return;
+                                        lists.add(strings);
+                                        /*for (JsonNode jsonNode : arr) {
+                                            String text = jsonNode.asText();
+
+
+                                            for (List<String> list : lists) {
+                                                for (String s : list) {
+
+                                                }
+                                            }
+                                            // hashMap.put()
+//                                            map.put(rowIndex,)
+                                            // 每次自动copy一列
+                                            ExcelUtil.copyColumn(sheet, destSheet, columnIndex, destColumnIndex);
+                                            destSheet.getRow(rowIndex).getCell(destColumnIndex++).setCellValue(text);
+//                                            System.out.println(text + " 0_0");
+                                            log.info("++ {}", text);
+                                        }*/
+//                                        wb.write(outputStream);
+//                                        return;
                                     }
                                     log.info("{} ---", newStr);
+                                } else {
+                                    lists.add(List.of(variable));
                                 }
                                 log.info(variable);
 //                                System.out.println(variable);
+                            } else {
+                                lists.add(List.of(value));
                             }
 
 
@@ -164,14 +173,36 @@ class JpaRestApplicationTests {
                     }
                 }
 
+                int index = 0;
+
+                iter(lists, new LinkedList<>(), index, sheet, destSheet, columnIndex, destColumnIndex);
+
+                newBook.write(outputStream);
+                return;
             }
-            wb.write(outputStream);
 //            outputStream.close();
             wb.close();
         } catch (Exception e) {
             throw new Exception(step + "生成Excel发生错误！", e);
         }
     }
+
+    private static void iter(List<List<String>> lists, LinkedList<String> list, int index, Sheet sourceSheet, Sheet targetSheet, int sourceColumnIndex, int targetColumnIndex) {
+        if (index == lists.size()) {
+            ExcelUtil.copyColumn(sourceSheet, targetSheet, sourceColumnIndex, targetColumnIndex, list);
+//            targetColumnIndex++;
+
+            System.out.println(list.toString());
+            return;
+        }
+        List<String> strings = lists.get(index);
+        for (String string : strings) {
+            list.add(string);
+            iter(lists, list, index + 1, sourceSheet, targetSheet, sourceColumnIndex, targetColumnIndex++);
+            list.pollLast();
+        }
+    }
+
 
     private static String getCellValue(Cell cell) {
         switch (cell.getCellType()) {
