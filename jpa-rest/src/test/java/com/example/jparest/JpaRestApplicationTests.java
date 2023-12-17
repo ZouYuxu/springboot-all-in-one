@@ -33,6 +33,7 @@ class JpaRestApplicationTests {
     String jsonPath = "customers.json";
     String destFilePath = "D:\\workspace\\java\\springboot-all-in-one\\jpa-rest\\src\\test\\resources\\template\\dest.xlsx";
     String sourFilePath = "D:\\workspace\\java\\springboot-all-in-one\\jpa-rest\\src\\test\\resources\\template\\a.xlsx";
+    private static int ind = 0;
 
     @Test
     public void jxls() throws IOException {
@@ -103,7 +104,7 @@ class JpaRestApplicationTests {
             XSSFSheet destSheet = newBook.createSheet("test");
             int destColumnIndex = 0;
             // 先列后行，这样可以方便生成
-            for (int columnIndex = 1; columnIndex < sheet.getRow(0).getLastCellNum(); columnIndex++) {
+            for (int columnIndex = 0; columnIndex < sheet.getRow(0).getLastCellNum(); columnIndex++) {
                 // 遍历每个单元格
                 HashMap<Integer, String> hashMap = new HashMap<>();
                 HashMap<String, Map> map = new HashMap<>();
@@ -136,21 +137,12 @@ class JpaRestApplicationTests {
                                         }
                                         lists.add(strings);
                                         /*for (JsonNode jsonNode : arr) {
-                                            String text = jsonNode.asText();
 
-
-                                            for (List<String> list : lists) {
-                                                for (String s : list) {
-
-                                                }
-                                            }
                                             // hashMap.put()
 //                                            map.put(rowIndex,)
                                             // 每次自动copy一列
                                             ExcelUtil.copyColumn(sheet, destSheet, columnIndex, destColumnIndex);
                                             destSheet.getRow(rowIndex).getCell(destColumnIndex++).setCellValue(text);
-//                                            System.out.println(text + " 0_0");
-                                            log.info("++ {}", text);
                                         }*/
 //                                        wb.write(outputStream);
 //                                        return;
@@ -175,12 +167,11 @@ class JpaRestApplicationTests {
 
                 int index = 0;
 
-                iter(lists, new LinkedList<>(), index, sheet, destSheet, columnIndex, destColumnIndex);
+                iter(lists, new LinkedList<>(), index, sheet, destSheet, columnIndex, ind);
 
-                newBook.write(outputStream);
-                return;
             }
-//            outputStream.close();
+                newBook.write(outputStream);
+            outputStream.close();
             wb.close();
         } catch (Exception e) {
             throw new Exception(step + "生成Excel发生错误！", e);
@@ -189,16 +180,16 @@ class JpaRestApplicationTests {
 
     private static void iter(List<List<String>> lists, LinkedList<String> list, int index, Sheet sourceSheet, Sheet targetSheet, int sourceColumnIndex, int targetColumnIndex) {
         if (index == lists.size()) {
-            ExcelUtil.copyColumn(sourceSheet, targetSheet, sourceColumnIndex, targetColumnIndex, list);
+            ExcelUtil.copyColumn(sourceSheet, targetSheet, sourceColumnIndex, ind++, list);
 //            targetColumnIndex++;
 
-            System.out.println(list.toString());
+            System.out.println(list.toString() + "-" + ind);
             return;
         }
         List<String> strings = lists.get(index);
         for (String string : strings) {
             list.add(string);
-            iter(lists, list, index + 1, sourceSheet, targetSheet, sourceColumnIndex, targetColumnIndex++);
+            iter(lists, list, index + 1, sourceSheet, targetSheet, sourceColumnIndex, targetColumnIndex);
             list.pollLast();
         }
     }

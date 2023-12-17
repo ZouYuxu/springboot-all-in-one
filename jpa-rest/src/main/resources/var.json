@@ -3,6 +3,6 @@
   "type": ["grade", "point"],
   "mon": [10, 11, 12],
   "class": ["cost", "cost", "cost", "cost", "cost"],
-  "className": ["成本", "成本", "成本", "成本", "成本"],
+  "className": ["成本", "交期", "品質", "永續", "設計"],
   "plant": ["F213", "F214", "F215", "F216", "F217"]
 }
