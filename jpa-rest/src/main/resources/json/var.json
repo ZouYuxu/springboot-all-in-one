@@ -1,16 +1,64 @@
 {
   "base": [
     {
-      "name": "brand__",
+      "name": "brand",
       "key": "brand"
     },
     {
-      "name": "product__",
+      "name": "product",
       "key": "product"
-    }],
-  "type": ["grade", "point"],
-  "mon": [10, 11, 12],
-  "class": ["cost", "cost", "cost", "cost", "cost"],
-  "className": ["成本", "交期", "品質", "永續", "設計"],
-  "plant": ["F213", "F214", "F215", "F216", "F217"]
+    }
+  ],
+  "type": [
+    "grade",
+    "point"
+  ],
+  "mon": [
+    10,
+    11,
+    12
+  ],
+  "class": [
+    {
+      "key": "cost",
+      "name": "成本"
+    },
+    {
+      "key": "delivery",
+      "name": "交期"
+    },
+    {
+      "key": "quality",
+      "name": "品質"
+    },
+    {
+      "key": "esg",
+      "name": "永續"
+    },
+    {
+      "key": "design",
+      "name": "設計"
+    }
+  ],
+  "subclass": [
+    {
+      "key": "delivery",
+      "name": "交期"
+    },
+    {
+      "key": "quality",
+      "name": "品質"
+    },
+    {
+      "key": "esg",
+      "name": "永續"
+    }
+  ],
+  "plant": [
+    "F131",
+    "F214",
+    "F132",
+    "F216",
+    "F721"
+  ]
 }

@@ -5,10 +5,9 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.*;
 
 import java.awt.Color;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class ExcelUtils<T> {
 
@@ -57,7 +56,7 @@ public class ExcelUtils<T> {
     }
 
     // copy column from one sheet to another
-    public static void copyColumn(Sheet sourceSheet, Sheet targetSheet, int sourceColumnIndex, int targetColumnIndex, List<String> list, int dataListRow, JsonNode node, JsonNode data) {
+    public static void copyColumn(Sheet sourceSheet, Sheet targetSheet, int sourceColumnIndex, int targetColumnIndex, List<String > list, int dataListRow, LinkedList<JsonNode> node, JsonNode data, HashMap<String, Integer> varLineMap) {
         int i = 0;
         List<String> ss = List.of("我真的", "kusi");
 
@@ -80,17 +79,32 @@ public class ExcelUtils<T> {
         }
 
 
-        String sourceValue = sourceSheet.getRow(dataListRow).getCell(targetColumnIndex).getStringCellValue();
+        String sourceValue = sourceSheet.getRow(dataListRow).getCell(sourceColumnIndex).getStringCellValue();
+        sourceValue = sourceValue.substring(1, sourceValue.length() - 1);
         String newPath = Pattern.compile("\\[(.*?)\\]").matcher(sourceValue).replaceAll(m -> {
             String group = m.group(1);
             // todo 在前面解决好路径的问题
             group = group.replaceAll("\\.", "/");
-            List<String> strings = List.of(String.valueOf(targetColumnIndex), group);
-            String path = "/" + String.join("/", strings);
-            String text = node.at(path).asText();
+            String[] split = group.split("/");
+            String variable = split[0];
+            String collect = "/"+Arrays.stream(split).skip(1).collect(Collectors.joining("/"));
+//            collect =
+            Integer integer = varLineMap.get(variable);
+            JsonNode jsonNode = node.get(integer);
+            String text;
+            if (jsonNode.isObject()) {
+                text = jsonNode.at(collect).asText();
+            } else {
+                text = jsonNode.asText();
+            }
             System.out.println(text);
-            return text;
+            return "/" + text;
         });
+
+        // to:　data/sub/cost/point/10
+        newPath = newPath.replaceAll("\\.", "/");
+        // to: /sub/cost/point/10
+        newPath = newPath.substring(newPath.indexOf("/"));
         List<String> strings = new ArrayList<>();
         if (data.isArray()) {
             for (JsonNode item : data) {

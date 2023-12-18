@@ -21,6 +21,7 @@ import java.util.*;
 public class EvaluationAnalyseDownloadService {
     private int ind = 0;
     private int fastIndex = 0;
+    private List<List<JsonNode>> variableNodes;
 
     public void downloadEvaluationAnalyse() throws Exception {
 
@@ -58,7 +59,8 @@ public class EvaluationAnalyseDownloadService {
         JsonNode data = mapper.readTree(dataInputStream);
         String step = "[1.0].Read template";
         byte[] bytes = FileUtil.readBytes("template" + File.separator + "easy.xlsx");
-        String destFilePath = new ClassPathResource("template/dest.xlsx").getFile().getAbsolutePath();
+//        String destFilePath = new ClassPathResource("template/dest.xlsx").getFile().getAbsolutePath();
+        String destFilePath = "D:\\workspace\\java\\springboot-all-in-one\\jpa-rest\\src\\test\\resources\\template\\dest.xlsx";
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(bytes));
              XSSFWorkbook newBook = new XSSFWorkbook();
              FileOutputStream outputStream = new FileOutputStream(destFilePath)) {
@@ -69,9 +71,11 @@ public class EvaluationAnalyseDownloadService {
             for (int columnIndex = 0; columnIndex < 4; columnIndex++) {
                 // 遍历每个单元格
                 HashMap<Integer, String> hashMap = new HashMap<>();
-                HashMap<String, Map> map = new HashMap<>();
-                ObjectNode variableNode = JsonNodeFactory.instance.objectNode();
+                HashMap<String, Integer> map = new HashMap<>();
+                JsonNode variableNode = JsonNodeFactory.instance.objectNode();
+                List<JsonNode> placeholderNodes = List.of(variableNode);
                 List<List<String>> lists = new ArrayList<>();
+                variableNodes = new ArrayList<>();
                 for (int rowIndex = 0; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
                     XSSFRow row = sheet.getRow(rowIndex);
                     if (row != null) {
@@ -89,13 +93,13 @@ public class EvaluationAnalyseDownloadService {
                                     dataListRow = rowIndex;
 
 
-                                    ArrayList<String> strings = new ArrayList<>();
-                                    JsonNode className = var.get("className");
-                                    for (JsonNode jsonNode : className) {
-                                        String s = jsonNode.asText();
-                                        strings.add(s);
-                                    }
-                                    lists.add(strings);
+//                                    ArrayList<String> strings = new ArrayList<>();
+//                                    JsonNode className = var.get("className");
+//                                    for (JsonNode jsonNode : className) {
+//                                        String s = jsonNode.asText();
+//                                        strings.add(s);
+//                                    }
+//                                    lists.add(strings);
                                 } else {
                                     String[] split = variable.split("\\.");
                                     String firstVariable = split[0];
@@ -109,21 +113,23 @@ public class EvaluationAnalyseDownloadService {
                                     }
                                     if (arr.isArray()) {
                                         ArrayList<String> strings = new ArrayList<>();
+                                        ArrayList<JsonNode> tempNodes = new ArrayList<>();
                                         for (JsonNode jsonNode : arr) {
-                                            String text = null;
+                                            String text;
+//                                            ObjectNode tempNode = JsonNodeFactory.instance.objectNode();
                                             if (jsonNode.isObject()) {
-                                                ObjectNode tempNode = JsonNodeFactory.instance.objectNode();
-                                                tempNode.put(firstVariable, jsonNode);
-                                                variableNode.put(String.valueOf(fastIndex++), tempNode);
 //                                            HashMap temp = new HashMap<String, Object>();
 //                                            temp.put(firstVariable, jsonNode);
 //                                            map.put(String.valueOf(fastIndex++), temp);
                                                 text = jsonNode.findPath(others).asText();
-                                            } else if (jsonNode.isTextual()) {
+                                            } else {
                                                 text = jsonNode.asText();
                                             }
+                                            map.put(firstVariable, rowIndex);
+                                            tempNodes.add(jsonNode);
                                             strings.add(text);
                                         }
+                                        variableNodes.add(tempNodes);
                                         lists.add(strings);
                                         /*for (JsonNode jsonNode : arr) {
 
@@ -135,6 +141,9 @@ public class EvaluationAnalyseDownloadService {
                                         }*/
 //                                        wb.write(outputStream);
 //                                        return;
+                                    } else {
+                                        variableNodes.add(placeholderNodes);
+                                        lists.add(List.of(value));
                                     }
                                     log.info("{} ---", firstVariable);
 
@@ -142,6 +151,7 @@ public class EvaluationAnalyseDownloadService {
                                 }
 //                                System.out.println(variable);
                             } else {
+                                variableNodes.add(placeholderNodes);
                                 lists.add(List.of(value));
                             }
 
@@ -155,10 +165,15 @@ public class EvaluationAnalyseDownloadService {
 
                 int index = 0;
 
-                iter(lists, new LinkedList<>(), index, sheet, destSheet, columnIndex, dataListRow, variableNode, data);
+                iter(lists, new LinkedList<>(), index, sheet, destSheet, columnIndex, dataListRow, new LinkedList<>(), data, map);
 
-                newBook.write(outputStream);
+                if (columnIndex == 12) {
+
+                    newBook.write(outputStream);
+                    return;
+                }
             }
+            newBook.write(outputStream);
             outputStream.close();
             wb.close();
         } catch (
@@ -168,19 +183,24 @@ public class EvaluationAnalyseDownloadService {
 
     }
 
-    private void iter(List<List<String>> lists, LinkedList<String> list, int index, Sheet sourceSheet, Sheet targetSheet, int sourceColumnIndex, int dataListRow, JsonNode node, JsonNode data) {
+    private void iter(List<List<String>> lists, LinkedList<String> list, int index, Sheet sourceSheet, Sheet targetSheet, int sourceColumnIndex, int dataListRow, LinkedList<JsonNode> variables, JsonNode data, HashMap<String, Integer> varLineMap) {
         if (index == dataListRow) {
-            ExcelUtils.copyColumn(sourceSheet, targetSheet, sourceColumnIndex, ind++, list, dataListRow, node, data);
+            ExcelUtils.copyColumn(sourceSheet, targetSheet, sourceColumnIndex, ind++, list, dataListRow, variables, data, varLineMap);
 //            targetColumnIndex++;
 
             System.out.println(list.toString() + "-" + ind);
             return;
         }
         List<String> strings = lists.get(index);
-        for (String string : strings) {
+        List<JsonNode> jsonNodes = variableNodes.get(index);
+        for (int i = 0; i < strings.size(); i++) {
+            String string = strings.get(i);
+            JsonNode jsonNode = jsonNodes.get(i);
             list.add(string);
-            iter(lists, list, index + 1, sourceSheet, targetSheet, sourceColumnIndex, dataListRow, node, data);
+            variables.add(jsonNode);
+            iter(lists, list, index + 1, sourceSheet, targetSheet, sourceColumnIndex, dataListRow, variables, data, varLineMap);
             list.pollLast();
+            variables.pollLast();
         }
     }
 
