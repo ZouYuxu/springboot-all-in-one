@@ -1,5 +1,13 @@
 {
-  "base": ["brand", "product"],
+  "base": [
+    {
+      "name": "brand__",
+      "key": "brand"
+    },
+    {
+      "name": "product__",
+      "key": "product"
+    }],
   "type": ["grade", "point"],
   "mon": [10, 11, 12],
   "class": ["cost", "cost", "cost", "cost", "cost"],

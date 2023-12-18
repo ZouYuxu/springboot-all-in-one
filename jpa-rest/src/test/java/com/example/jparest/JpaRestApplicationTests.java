@@ -92,7 +92,7 @@ class JpaRestApplicationTests {
     @Test
     public void downloadEvaluationAnalyse() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
-        InputStream inputStream = new ClassPathResource("var.json").getInputStream();
+        InputStream inputStream = new ClassPathResource("json/var.json").getInputStream();
         JsonNode var = mapper.readTree(inputStream);
 
         String step = "[1.0].Read template";

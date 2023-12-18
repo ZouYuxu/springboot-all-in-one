@@ -1,41 +1,22 @@
 package com.example.jparest;
 
-import cn.hutool.core.convert.Convert;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.resource.ResourceUtil;
-import cn.hutool.core.lang.TypeReference;
 import cn.hutool.poi.excel.ExcelReader;
 import cn.hutool.poi.excel.ExcelUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.enums.WriteDirectionEnum;
-import com.alibaba.excel.metadata.Head;
-import com.alibaba.excel.read.builder.ExcelReaderBuilder;
-import com.alibaba.excel.write.merge.AbstractMergeStrategy;
 import com.alibaba.excel.write.metadata.WriteSheet;
 import com.alibaba.excel.write.metadata.fill.FillConfig;
-import com.alibaba.excel.write.metadata.fill.FillWrapper;
 import com.example.jparest.handler.CustomCellWriteHandler;
 import com.example.jparest.handler.CustomConverterHandler;
-import com.example.jparest.model.Book;
-import com.example.jparest.model.request.BookCreationRequest;
+import com.example.jparest.utils.EvaluationAnalyseDownloadService;
 import com.example.jparest.utils.TestFileUtil;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.ServletOutputStream;
-import org.apache.commons.io.FileUtils;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.util.CellRangeAddress;
-import org.apache.poi.xssf.usermodel.XSSFRow;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Test;
-import org.springframework.core.io.ClassPathResource;
 
 import java.io.*;
-import java.net.URLEncoder;
 import java.util.*;
 
 class DownloadTest {
@@ -44,8 +25,12 @@ class DownloadTest {
     // target/test-classes/template
     // 路径
     String result = TestFileUtil.getPath() + "template/easyResult.xlsx";
-    String template = TestFileUtil.getPath() + "template/easy.xlsx";
-
+    String template = TestFileUtil.getPath() + "templates/easy.xlsx";
+    EvaluationAnalyseDownloadService evaluationAnalyseDownloadService = new EvaluationAnalyseDownloadService();
+    @Test
+    void tt() throws Exception {
+        evaluationAnalyseDownloadService.template();
+    }
 
     @Test
     void t() {
@@ -137,7 +122,7 @@ class DownloadTest {
     @Test
     public void cloneSheet() throws IOException {
         String result = TestFileUtil.getPath() + "template/easyResult.xlsx";
-        String template = TestFileUtil.getPath() + "template/easy.xlsx";
+        String template = TestFileUtil.getPath() + "templates/easy.xlsx";
         ObjectMapper mapper = new ObjectMapper();
         HashMap jsonNode = mapper.readValue(FileUtil.readUtf8String("jss.json"),HashMap.class);
 
