@@ -2,6 +2,7 @@ package com.example.jparest.utils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.*;
 
 import java.awt.Color;
@@ -64,6 +65,7 @@ public class ExcelUtils<T> {
             boolean flag = i >= dataListRow;
             int index = i - dataListRow;
             Row sourceRow = sourceSheet.getRow(flag ? dataListRow : i);
+//            sourceSheet.addMergedRegion(new CellRangeAddress())
             Row targetRow = targetSheet.getRow(i);
             String newValue = flag ? ss.get(index) : list.get(i);
             // fix bug：brand column missing
@@ -72,7 +74,7 @@ public class ExcelUtils<T> {
             }
             if (sourceRow != null) {
                 Cell sourceCell = sourceRow.getCell(sourceColumnIndex);
-//                fun.call(sourceValue);
+                //                fun.call(sourceValue);
                 Cell newCell = targetRow.createCell(targetColumnIndex);
                 copyCell(sourceCell, newCell, newValue, dataListRow);
             }
