@@ -11,7 +11,7 @@ import com.alibaba.excel.write.metadata.WriteSheet;
 import com.alibaba.excel.write.metadata.fill.FillConfig;
 import com.example.jparest.handler.CustomCellWriteHandler;
 import com.example.jparest.handler.CustomConverterHandler;
-import com.example.jparest.utils.EvaluationAnalyseDownloadService;
+import com.example.jparest.service.EvaluationAnalyseDownloadService;
 import com.example.jparest.utils.TestFileUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;

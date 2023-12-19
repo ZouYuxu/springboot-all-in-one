@@ -1,10 +1,10 @@
-package com.wistron.vendorcentercontext.ohs.local.appservice.evalutionanalyse;
+package com.example.jparest.service;
 
 import cn.hutool.core.io.FileUtil;
+import com.example.jparest.utils.ExcelUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.wistron.vendorcentercontext.ohs.local.handler.util.ExcelUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -56,24 +56,24 @@ public class EvaluationAnalyseDownloadService {
         ObjectMapper mapper = new ObjectMapper();
         InputStream inputStream = new ClassPathResource("json/var.json").getInputStream();
         InputStream dataInputStream = new ClassPathResource("json/data.json").getInputStream();
+//        File source = new ClassPathResource("templates/easy.xlsx").getFile();
+//        File dest = new ClassPathResource("templates/dest.xlsx").getFile();
         JsonNode var = mapper.readTree(inputStream);
         JsonNode data = mapper.readTree(dataInputStream);
         String step = "[1.0].Read template";
-        String sourceFilePath = "E:\\workspace\\java\\avtsdm_qvcapi\\src\\main\\resources\\template\\easy.xlsx";
-        byte[] bytes = FileUtil.readBytes(sourceFilePath);
-//        String destFilePath = new ClassPathResource("template/dest.xlsx").getFile().getAbsolutePath();
-        String destFilePath = "E:\\workspace\\java\\avtsdm_qvcapi\\src\\main\\resources\\template\\dest.xlsx";
-        try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(bytes));
+        String sourceFilePath = "D:\\workspace\\java\\springboot-all-in-one\\jpa-rest\\src\\main\\resources\\templates\\easy.xlsx";
+        String destFilePath = "D:\\workspace\\java\\springboot-all-in-one\\jpa-rest\\src\\main\\resources\\templates\\dest.xlsx";
+        try (XSSFWorkbook wb = new XSSFWorkbook(new FileInputStream(sourceFilePath));
              XSSFWorkbook newBook = new XSSFWorkbook();
              FileOutputStream outputStream = new FileOutputStream(destFilePath)) {
             XSSFSheet sheet = wb.getSheet("easy");
-            XSSFSheet destSheet = newBook.createSheet("test");
+            XSSFSheet destSheet = newBook.createSheet("what");
             int dataListRow = 0;
             List<CellRangeAddress> mergedRegions = sheet.getMergedRegions();
             // 先列后行，这样可以方便生成
             for (int columnIndex = 0; columnIndex < sheet.getRow(0).getLastCellNum(); columnIndex++) {
                 int finalColumnIndex = columnIndex;
-                Optional<CellRangeAddress> rangeAddress = mergedRegions.stream().filter(v -> v.getFirstColumn() == finalColumnIndex).findFirst();
+                Optional<CellRangeAddress> rangeAddress = mergedRegions.stream().filter(v -> v.containsColumn(finalColumnIndex)).findFirst();
                 // 遍历每个单元格
                 HashMap<Integer, String> hashMap = new HashMap<>();
                 HashMap<String, Integer> map = new HashMap<>();
@@ -173,16 +173,16 @@ public class EvaluationAnalyseDownloadService {
 
                 iter(lists, new LinkedList<>(), index, sheet, destSheet, columnIndex, dataListRow, new LinkedList<>(), data, map);
 
-                if (columnIndex == 12) {
+
+                createMerge(0, lists, dataListRow, columnIndex, destSheet, initial, rangeAddress);
+                System.out.println();
+                if (columnIndex == 10) {
 
                     newBook.write(outputStream);
                     return;
                 }
-
-                createMerge(0, lists, dataListRow, columnIndex, destSheet, initial, rangeAddress);
-                System.out.println();
+//                destSheet.addMergedRegion(new CellRangeAddress(0, 2, 0, 0));
             }
-//            destSheet.addMergedRegion(new CellRangeAddress(0, 1, 2, 4));
             newBook.write(outputStream);
             outputStream.close();
             wb.close();
@@ -195,78 +195,107 @@ public class EvaluationAnalyseDownloadService {
 
     private int createMerge(int rowIndex, List<List<String>> lists, int dataListRow, int columnIndex, XSSFSheet destSheet, int initial, Optional<CellRangeAddress> rangeAddress) {
         // 获取下一个列表的长度
-        int nextRowIndex = rowIndex + 1;
         List<String> rowVars = lists.get(rowIndex);
         int rowSize = rowVars.size();
-        if (nextRowIndex == dataListRow) {
 
-            log.info("{}: {}", rowIndex, rowSize);
+        if (rowIndex == dataListRow) return rowSize;
 
-            return rowSize;
+        int nextSize = createMerge(rowIndex + 1, lists, dataListRow, columnIndex, destSheet, initial, rangeAddress);
+        int newSize = rowSize * nextSize;
 
-        } else {
-            int nextSize = createMerge(nextRowIndex, lists, dataListRow, columnIndex, destSheet, initial, rangeAddress);
-            int newSize = rowSize * nextSize;
-            if (nextSize > 1) {
-                if (rangeAddress.isPresent()) {
-                    CellRangeAddress cellAddresses = rangeAddress.get();
-                    for (int sizeIndex = 0; sizeIndex < rowSize; sizeIndex++) {
-                        int firstCol = initial + sizeIndex * nextSize; // 0
-                        int lastCol = firstCol + nextSize - 1; // 2
-                        int firstRangeColumn = cellAddresses.getFirstColumn();
-                        int lastRangeColumn = cellAddresses.getLastColumn();
-                        int firstRangeRow = cellAddresses.getFirstRow();
-                        int lastRangeRow = cellAddresses.getLastRow();
-                        //
-                        int delta = lastRangeColumn - firstRangeColumn;
-                        // 第一行
-                        if (firstRangeRow == rowIndex) {
+
+        if (rangeAddress.isPresent()) {
+            CellRangeAddress cellAddresses = rangeAddress.get();
+            int firstRangeColumn = cellAddresses.getFirstColumn();
+            int lastRangeColumn = cellAddresses.getLastColumn();
+            int firstRangeRow = cellAddresses.getFirstRow();
+            int lastRangeRow = cellAddresses.getLastRow();
+            int delta = lastRangeColumn - firstRangeColumn;
+
+            // 单个元素不需要分组
+//            if (!cellAddresses.containsRow(rowIndex) && nextSize == 1 && delta == 1) {
+//                return nextSize;
+//            }
+
+
+            for (int sizeIndex = 0; sizeIndex < rowSize; sizeIndex++) {
+                int firstCol = initial + sizeIndex * nextSize; // 0
+                int lastCol = firstCol + nextSize - 1; // 2
+                //
+
+
+                // 不包含，就不处理
+                // 第一行
+                if (firstRangeRow == rowIndex) {
 //                            destSheet.addMergedRegion(new CellRangeAddress(firstRangeRow, lastRangeRow, ))
 
-                            // 包含但是不是第一行，就不处理
-                        } else if (cellAddresses.containsRow(rowIndex)) {
-                            return newSize;
-                        } else {
-                            firstRangeRow = rowIndex;
-                            lastRangeRow = rowIndex;
-
-                        }
-                        // 不包含，就不处理
-
-                        // 列
-                        // 第一列
-                        if (firstRangeColumn == columnIndex) {
-                            firstRangeColumn = firstCol;
-                            lastRangeColumn = nextSize * delta + lastCol;
-                            // 包含并且覆盖多列
-                        } else if (cellAddresses.containsColumn(columnIndex)) {
-                            // 不包含，就不处理
-                        } else {
-
-                            firstRangeColumn = firstCol;
-                            lastRangeColumn = lastCol;
-
-                        }
-                        destSheet.addMergedRegion(new CellRangeAddress(firstRangeRow, lastRangeRow, firstRangeColumn, lastRangeColumn));
-
-                        log.info("{}-{}: {}", rowIndex, sizeIndex, nextSize);
-                    }
+                    // 包含但是不是第一行，就不处理
+                } else if (cellAddresses.containsRow(rowIndex)) {
+                    return newSize;
+                } else {
+                    firstRangeRow = rowIndex;
+                    lastRangeRow = rowIndex;
 
                 }
-                /*else {
-                    for (int sizeIndex = 0; sizeIndex < rowSize; sizeIndex++) {
-                        int firstCol = initial + sizeIndex * nextSize; // 0
-                        int lastCol = firstCol + nextSize - 1; // 2
-
-                        destSheet.addMergedRegion(new CellRangeAddress(rowIndex, rowIndex, firstCol, lastCol));
-                        log.info("{}-{}: {}", rowIndex, sizeIndex, nextSize);
-
+                // 列
+                // 第一列
+                // 如果是跨列的话，只取第一个进行merge，防止重复
+                boolean isColspan = delta > 1;
+                if (isColspan) {
+                    // 不适第一个
+                    if (sizeIndex != 0) {
+                        // 结束循环
+                        break;
                     }
-                }*/
+                    firstRangeColumn = firstCol;
+                    lastRangeColumn = nextSize * delta + lastCol;
+                } else {
+                    // 不跨列
+                    firstRangeColumn = firstCol;
+                    lastRangeColumn = lastCol;
+
+                }
+                log.info("{}-{}: {}", rowIndex, sizeIndex, nextSize);
+                if (firstRangeRow == lastRangeRow && firstRangeColumn == lastRangeColumn) {
+                    continue;
+                }
+                destSheet.addMergedRegion(new CellRangeAddress(firstRangeRow, lastRangeRow, firstRangeColumn, lastRangeColumn));
             }
 
-            return newSize;
+        } else {
+            if (nextSize > 1) {
+                for (int sizeIndex = 0; sizeIndex < rowSize; sizeIndex++) {
+
+                    int firstCol = initial + sizeIndex * nextSize; // 0
+                    int lastCol = firstCol + nextSize - 1; // 2
+
+                    destSheet.addMergedRegion(new CellRangeAddress(rowIndex, rowIndex, firstCol, lastCol));
+                    log.info("{}-{}: {}", rowIndex, sizeIndex, nextSize);
+                }
+
+//                List<String> next2List = lists.get(rowIndex + 2);
+//                int next2Size = next2List.size();
+//                while (next2Size > 1) {
+//
+//                }
+//
+//                List<String> row = lists.get(rowIndex);
+//                for (int sizeIndex = 0; sizeIndex < row.size(); sizeIndex++) {
+//                    int nextSize = lists.get(rowIndex + 1).size();
+//                    if (nextSize > 1) {
+//
+//                    }
+//                    int firstCol = initial + sizeIndex * nextSize; // 0
+//                    int lastCol = firstCol + nextSize - 1; // 2
+//
+//                    destSheet.addMergedRegion(new CellRangeAddress(rowIndex, rowIndex, firstCol, lastCol));
+//                    log.info("{}-{}: {}", rowIndex, sizeIndex, nextSize);
+//                }
+
+            }
         }
+
+        return newSize;
 
     }
 
