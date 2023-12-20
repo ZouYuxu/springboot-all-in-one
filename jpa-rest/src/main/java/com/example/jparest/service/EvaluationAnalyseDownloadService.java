@@ -175,9 +175,9 @@ public class EvaluationAnalyseDownloadService {
                 iter(lists, new LinkedList<>(), index, sheet, destSheet, columnIndex, dataListRow, new LinkedList<>(), data, map);
 
 
-                createMerge(0, lists, dataListRow, columnIndex, destSheet);
+                createMerge(0, lists, dataListRow, columnIndex, destSheet, rangeAddress);
                 System.out.println();
-                if (columnIndex == 3) {
+                if (columnIndex == 13) {
 
                     newBook.write(outputStream);
                     return;
@@ -199,33 +199,60 @@ public class EvaluationAnalyseDownloadService {
     }
 
 
-    private int createMerge(int rowIndex, List<List<String>> lists, int dataListRow, int columnIndex, XSSFSheet destSheet) {
+    private int createMerge(int rowIndex, List<List<String>> lists, int dataListRow, int columnIndex, XSSFSheet destSheet, Optional<CellRangeAddress> rangeAddress) {
         List<String> rowVars = lists.get(rowIndex);
         int rowVarSize = rowVars.size();
 
         if (rowIndex == dataListRow) return rowVarSize;
+        boolean isStartColumn = true;
+        int lastRowIndex = rowIndex;
+        int columnGaps = 0;
+        if (rangeAddress.isPresent()) {
+            CellRangeAddress cellAddresses = rangeAddress.get();
+            // 包含row的话
+            if (cellAddresses.containsRow(rowIndex)) {
+                lastRowIndex = cellAddresses.getLastRow();
+            }
 
+            // 包含col的话
+            if (cellAddresses.containsColumn(columnIndex)) {
+                columnGaps = cellAddresses.getLastColumn() - cellAddresses.getFirstColumn();
+            }
+
+            isStartColumn = cellAddresses.getFirstColumn() == columnIndex;
+        }
 //        if (rowVarSize == 1 && rowVars.get(0).isEmpty()) {
 //
 //        }
         int newSize = 1;
         int temp = initial;
+        // 不是初始列，不需要
+        if (!isStartColumn) {
+            return newSize;
+        }
         for (int sizeIndex = 0; sizeIndex < rowVarSize; sizeIndex++) {
-            int nextSize = createMerge(rowIndex + 1, lists, dataListRow, columnIndex, destSheet);
+            int nextSize = createMerge(rowIndex + 1, lists, dataListRow, columnIndex, destSheet, rangeAddress);
             newSize = rowVarSize * nextSize;
 
             if (nextSize > 1) {
-                int firstCol = initial ; // 0
-                int lastCol = firstCol + nextSize - 1; // 2
+                int firstCol = initial; // 0
+                // 增加间隔
+                int lastCol = firstCol + nextSize * (1 + columnGaps) - 1; // 2
                 initial = lastCol + 1;
                 // todo: 跳过为空的不合并
                 if (rowIndex != 0 && rowVarSize == 1 && rowVars.get(0).isEmpty()) {
                     break;
                 }
-//                destSheet.validateMergedRegions();
-                destSheet.addMergedRegion(new CellRangeAddress(rowIndex, rowIndex, firstCol, lastCol));
+                destSheet.addMergedRegion(new CellRangeAddress(rowIndex, lastRowIndex, firstCol, lastCol));
                 log.info("{}-{}: {}", rowIndex, sizeIndex, nextSize);
             } else {
+                if (rowIndex != 0 && rowVarSize == 1 && rowVars.get(0).isEmpty()) {
+                    break;
+                }
+                // 防止单个单元格合并报错
+                if (rowIndex != lastRowIndex) {
+                    destSheet.addMergedRegion(new CellRangeAddress(rowIndex, lastRowIndex, initial, initial));
+                }
                 // 单列自动增加1
                 initial += 1;
             }
@@ -237,7 +264,7 @@ public class EvaluationAnalyseDownloadService {
         return newSize;
     }
 
-    private int createMerge(int rowIndex, List<List<String>> lists, int dataListRow, int columnIndex, XSSFSheet destSheet, Optional<CellRangeAddress> rangeAddress) {
+    private int createMergeBK(int rowIndex, List<List<String>> lists, int dataListRow, int columnIndex, XSSFSheet destSheet, Optional<CellRangeAddress> rangeAddress) {
         // 获取下一个列表的长度
         List<String> rowVars = lists.get(rowIndex);
         int rowSize = rowVars.size();
