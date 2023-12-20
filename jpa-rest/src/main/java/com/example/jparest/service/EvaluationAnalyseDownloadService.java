@@ -98,14 +98,6 @@ public class EvaluationAnalyseDownloadService {
                                 if (variable.contains("[")) {
                                     dataListRow = rowIndex;
 
-
-//                                    ArrayList<String> strings = new ArrayList<>();
-//                                    JsonNode className = var.get("className");
-//                                    for (JsonNode jsonNode : className) {
-//                                        String s = jsonNode.asText();
-//                                        strings.add(s);
-//                                    }
-//                                    lists.add(strings);
                                 } else {
                                     String[] split = variable.split("\\.");
                                     String firstVariable = split[0];
@@ -122,11 +114,7 @@ public class EvaluationAnalyseDownloadService {
                                         ArrayList<JsonNode> tempNodes = new ArrayList<>();
                                         for (JsonNode jsonNode : arr) {
                                             String text;
-//                                            ObjectNode tempNode = JsonNodeFactory.instance.objectNode();
                                             if (jsonNode.isObject()) {
-//                                            HashMap temp = new HashMap<String, Object>();
-//                                            temp.put(firstVariable, jsonNode);
-//                                            map.put(String.valueOf(fastIndex++), temp);
                                                 text = jsonNode.findPath(others).asText();
                                             } else {
                                                 text = jsonNode.asText();
@@ -137,34 +125,18 @@ public class EvaluationAnalyseDownloadService {
                                         }
                                         variableNodes.add(tempNodes);
                                         lists.add(strings);
-                                        /*for (JsonNode jsonNode : arr) {
-
-                                            // hashMap.put()
-//                                            map.put(rowIndex,)
-                                            // 每次自动copy一列
-                                            ExcelUtil.copyColumn(sheet, destSheet, columnIndex, destColumnIndex);
-                                            destSheet.getRow(rowIndex).getCell(destColumnIndex++).setCellValue(text);
-                                        }*/
-//                                        wb.write(outputStream);
-//                                        return;
                                     } else {
                                         variableNodes.add(placeholderNodes);
                                         lists.add(List.of(value));
                                     }
-                                    log.info("{} ---", firstVariable);
-
-                                    log.info(variable);
+                                    log.info("{} --- {}", firstVariable, variable);
                                 }
-//                                System.out.println(variable);
                             } else {
                                 variableNodes.add(placeholderNodes);
                                 lists.add(List.of(value));
                             }
-
-
                             // 输出单元格内容
                             log.info("[{}, {}]: {}", rowIndex, columnIndex, value);
-//                            System.out.println("[" + rowIndex + "," + columnIndex + "]: " + value);
                         }
                     }
                 }
@@ -176,13 +148,12 @@ public class EvaluationAnalyseDownloadService {
 
 
                 createMerge(0, lists, dataListRow, columnIndex, destSheet, rangeAddress);
-                System.out.println();
-                if (columnIndex == 13) {
+            }
 
-                    newBook.write(outputStream);
-                    return;
-                }
-//                destSheet.addMergedRegion(new CellRangeAddress(0, 2, 0, 0));
+            // 自动列宽
+            for (int i = 0; i < ind; i++) {
+                destSheet.autoSizeColumn(i, true);
+                destSheet.setColumnWidth(i, destSheet.getColumnWidth(i) * 11 / 10);
             }
             newBook.write(outputStream);
             outputStream.close();
@@ -221,9 +192,6 @@ public class EvaluationAnalyseDownloadService {
 
             isStartColumn = cellAddresses.getFirstColumn() == columnIndex;
         }
-//        if (rowVarSize == 1 && rowVars.get(0).isEmpty()) {
-//
-//        }
         int newSize = 1;
         int temp = initial;
         // 不是初始列，不需要
