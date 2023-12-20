@@ -23,6 +23,7 @@ public class EvaluationAnalyseDownloadService {
     private int ind = 0;
     private int fastIndex = 0;
     private List<List<JsonNode>> variableNodes;
+    private int initial;
 
     public void downloadEvaluationAnalyse() throws Exception {
 
@@ -61,8 +62,8 @@ public class EvaluationAnalyseDownloadService {
         JsonNode var = mapper.readTree(inputStream);
         JsonNode data = mapper.readTree(dataInputStream);
         String step = "[1.0].Read template";
-        String sourceFilePath = "D:\\workspace\\java\\springboot-all-in-one\\jpa-rest\\src\\main\\resources\\templates\\easy.xlsx";
-        String destFilePath = "D:\\workspace\\java\\springboot-all-in-one\\jpa-rest\\src\\main\\resources\\templates\\dest.xlsx";
+        String sourceFilePath = "E:\\workspace\\java\\springboot-all-in-one\\jpa-rest\\src\\main\\resources\\templates\\easy.xlsx";
+        String destFilePath = "E:\\workspace\\java\\springboot-all-in-one\\jpa-rest\\src\\main\\resources\\templates\\dest.xlsx";
         try (XSSFWorkbook wb = new XSSFWorkbook(new FileInputStream(sourceFilePath));
              XSSFWorkbook newBook = new XSSFWorkbook();
              FileOutputStream outputStream = new FileOutputStream(destFilePath)) {
@@ -174,9 +175,9 @@ public class EvaluationAnalyseDownloadService {
                 iter(lists, new LinkedList<>(), index, sheet, destSheet, columnIndex, dataListRow, new LinkedList<>(), data, map);
 
 
-                createMerge(0, lists, dataListRow, columnIndex, destSheet, initial, rangeAddress);
+                createMerge(0, lists, dataListRow, columnIndex, destSheet);
                 System.out.println();
-                if (columnIndex == 10) {
+                if (columnIndex == 3) {
 
                     newBook.write(outputStream);
                     return;
@@ -193,34 +194,84 @@ public class EvaluationAnalyseDownloadService {
 
     }
 
-    private int createMerge(int rowIndex, List<List<String>> lists, int dataListRow, int columnIndex, XSSFSheet destSheet, int initial, Optional<CellRangeAddress> rangeAddress) {
+    void create(int rowIndex, List<List<String>> lists, int dataListRow, int columnIndex, XSSFSheet destSheet, int initial) {
+
+    }
+
+
+    private int createMerge(int rowIndex, List<List<String>> lists, int dataListRow, int columnIndex, XSSFSheet destSheet) {
+        List<String> rowVars = lists.get(rowIndex);
+        int rowVarSize = rowVars.size();
+
+        if (rowIndex == dataListRow) return rowVarSize;
+
+//        if (rowVarSize == 1 && rowVars.get(0).isEmpty()) {
+//
+//        }
+        int newSize = 1;
+        int temp = initial;
+        for (int sizeIndex = 0; sizeIndex < rowVarSize; sizeIndex++) {
+            int nextSize = createMerge(rowIndex + 1, lists, dataListRow, columnIndex, destSheet);
+            newSize = rowVarSize * nextSize;
+
+            if (nextSize > 1) {
+                int firstCol = initial ; // 0
+                int lastCol = firstCol + nextSize - 1; // 2
+                initial = lastCol + 1;
+                // todo: 跳过为空的不合并
+                if (rowIndex != 0 && rowVarSize == 1 && rowVars.get(0).isEmpty()) {
+                    break;
+                }
+//                destSheet.validateMergedRegions();
+                destSheet.addMergedRegion(new CellRangeAddress(rowIndex, rowIndex, firstCol, lastCol));
+                log.info("{}-{}: {}", rowIndex, sizeIndex, nextSize);
+            } else {
+                // 单列自动增加1
+                initial += 1;
+            }
+        }
+        // 如果是第一行的话，是真的会影响到initial
+        if (rowIndex != 0) {
+            initial = temp;
+        }
+        return newSize;
+    }
+
+    private int createMerge(int rowIndex, List<List<String>> lists, int dataListRow, int columnIndex, XSSFSheet destSheet, Optional<CellRangeAddress> rangeAddress) {
         // 获取下一个列表的长度
         List<String> rowVars = lists.get(rowIndex);
         int rowSize = rowVars.size();
 
         if (rowIndex == dataListRow) return rowSize;
 
-        int nextSize = createMerge(rowIndex + 1, lists, dataListRow, columnIndex, destSheet, initial, rangeAddress);
-        int newSize = rowSize * nextSize;
+//        int nextSize =
+
+        // 递归算法
 
 
-        if (rangeAddress.isPresent()) {
-            CellRangeAddress cellAddresses = rangeAddress.get();
-            int firstRangeColumn = cellAddresses.getFirstColumn();
-            int lastRangeColumn = cellAddresses.getLastColumn();
-            int firstRangeRow = cellAddresses.getFirstRow();
-            int lastRangeRow = cellAddresses.getLastRow();
-            int delta = lastRangeColumn - firstRangeColumn;
-
-            // 单个元素不需要分组
+        // 单个元素不需要分组
 //            if (!cellAddresses.containsRow(rowIndex) && nextSize == 1 && delta == 1) {
 //                return nextSize;
 //            }
 
 
-            for (int sizeIndex = 0; sizeIndex < rowSize; sizeIndex++) {
-                int firstCol = initial + sizeIndex * nextSize; // 0
+        int nextSize = 1;
+        int temp = initial;
+        for (int sizeIndex = 0; sizeIndex < rowSize; sizeIndex++) {
+            if (rangeAddress.isPresent()) {
+                CellRangeAddress cellAddresses = rangeAddress.get();
+                int firstRangeColumn = cellAddresses.getFirstColumn();
+                int lastRangeColumn = cellAddresses.getLastColumn();
+                int firstRangeRow = cellAddresses.getFirstRow();
+                int lastRangeRow = cellAddresses.getLastRow();
+                int delta = lastRangeColumn - firstRangeColumn;
+
+                nextSize = createMerge(rowIndex + 1, lists, dataListRow, columnIndex, destSheet, rangeAddress);
+                int newSize = rowSize * nextSize;
+
+                int firstCol = this.initial + sizeIndex * nextSize; // 0
                 int lastCol = firstCol + nextSize - 1; // 2
+                this.initial = lastCol + 1;
                 //
 
 
@@ -260,12 +311,30 @@ public class EvaluationAnalyseDownloadService {
                     continue;
                 }
                 destSheet.addMergedRegion(new CellRangeAddress(firstRangeRow, lastRangeRow, firstRangeColumn, lastRangeColumn));
+            } else {
+                nextSize = createMerge(rowIndex + 1, lists, dataListRow, columnIndex, destSheet, rangeAddress);
+                int newSize = rowSize * nextSize;
+                if (nextSize > 1) {
+                    int firstCol = initial + sizeIndex * nextSize; // 0
+                    int lastCol = firstCol + nextSize - 1; // 2
+                    initial = lastCol + 1;
+
+                    destSheet.addMergedRegion(new CellRangeAddress(rowIndex, rowIndex, firstCol, lastCol));
+                    log.info("{}-{}: {}", rowIndex, sizeIndex, nextSize);
+                }
             }
+        }
+        // 如果是第一行的话，是真的会影响到initial
+        if (rowIndex != 0) {
+            initial = temp;
+        }
+        return nextSize;
 
-        } else {
-            if (nextSize > 1) {
-                for (int sizeIndex = 0; sizeIndex < rowSize; sizeIndex++) {
-
+        /*} else {
+            for (int sizeIndex = 0; sizeIndex < rowSize; sizeIndex++) {
+                int nextSize = createMerge(rowIndex + 1, lists, dataListRow, columnIndex, destSheet, initial, rangeAddress);
+                int newSize = rowSize * nextSize;
+                if (nextSize > 1) {
                     int firstCol = initial + sizeIndex * nextSize; // 0
                     int lastCol = firstCol + nextSize - 1; // 2
 
@@ -292,15 +361,17 @@ public class EvaluationAnalyseDownloadService {
 //                    log.info("{}-{}: {}", rowIndex, sizeIndex, nextSize);
 //                }
 
+                return newSize;
             }
-        }
+        }*/
 
-        return newSize;
 
     }
 
 
-    private void iter(List<List<String>> lists, LinkedList<String> list, int index, Sheet sourceSheet, Sheet targetSheet, int sourceColumnIndex, int dataListRow, LinkedList<JsonNode> variables, JsonNode data, HashMap<String, Integer> varLineMap) {
+    private void iter(List<List<String>> lists, LinkedList<String> list, int index, Sheet sourceSheet, Sheet
+            targetSheet, int sourceColumnIndex, int dataListRow, LinkedList<JsonNode> variables, JsonNode
+                              data, HashMap<String, Integer> varLineMap) {
         if (index == dataListRow) {
             ExcelUtils.copyColumn(sourceSheet, targetSheet, sourceColumnIndex, ind++, list, dataListRow, variables, data, varLineMap);
 //            targetColumnIndex++;
