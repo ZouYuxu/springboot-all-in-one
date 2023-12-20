@@ -1,11 +1,12 @@
 package com.example.jparest.utils;
 
+import cn.hutool.core.util.NumberUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.*;
 
 import java.awt.Color;
+import java.util.List;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -57,7 +58,7 @@ public class ExcelUtils<T> {
     }
 
     // copy column from one sheet to another
-    public static void copyColumn(Sheet sourceSheet, Sheet targetSheet, int sourceColumnIndex, int targetColumnIndex, List<String > list, int dataListRow, LinkedList<JsonNode> node, JsonNode data, HashMap<String, Integer> varLineMap) {
+    public static void copyColumn(Sheet sourceSheet, Sheet targetSheet, int sourceColumnIndex, int targetColumnIndex, List<String> list, int dataListRow, LinkedList<JsonNode> node, JsonNode data, HashMap<String, Integer> varLineMap) {
         int i = 0;
         List<String> ss = List.of("我真的", "kusi");
 
@@ -74,9 +75,8 @@ public class ExcelUtils<T> {
             }
             if (sourceRow != null) {
                 Cell sourceCell = sourceRow.getCell(sourceColumnIndex);
-                //                fun.call(sourceValue);
                 Cell newCell = targetRow.createCell(targetColumnIndex);
-                copyCell(sourceCell, newCell, newValue, dataListRow);
+                copyCell(sourceCell, newCell, newValue);
             }
         }
 
@@ -89,7 +89,7 @@ public class ExcelUtils<T> {
             group = group.replaceAll("\\.", "/");
             String[] split = group.split("/");
             String variable = split[0];
-            String collect = "/"+Arrays.stream(split).skip(1).collect(Collectors.joining("/"));
+            String collect = "/" + Arrays.stream(split).skip(1).collect(Collectors.joining("/"));
 //            collect =
             Integer integer = varLineMap.get(variable);
             JsonNode jsonNode = node.get(integer);
@@ -110,7 +110,8 @@ public class ExcelUtils<T> {
         List<String> strings = new ArrayList<>();
         if (data.isArray()) {
             for (JsonNode item : data) {
-                strings.add(item.at(newPath).asText());
+                JsonNode at = item.at(newPath);
+                strings.add(at.asText());
             }
         }
         for (; i < dataListRow + strings.size(); i++) {
@@ -125,10 +126,28 @@ public class ExcelUtils<T> {
             }
             if (sourceRow != null) {
                 Cell sourceCell = sourceRow.getCell(sourceColumnIndex);
-//                fun.call(sourceValue);
                 Cell newCell = targetRow.createCell(targetColumnIndex);
-                copyCell(sourceCell, newCell, newValue, dataListRow);
+                copyCell(sourceCell, newCell, newValue);
             }
+        }
+    }
+
+    public static void copyCell(Cell sourceCell, Cell targetCell, String value) {
+        if (sourceCell == null || targetCell == null) {
+            return;
+        }
+        // 复制单元格样式
+        CellStyle newCellStyle = targetCell.getSheet().getWorkbook().createCellStyle();
+        newCellStyle.cloneStyleFrom(sourceCell.getCellStyle());
+        targetCell.setCellStyle(newCellStyle);
+        targetCell.setCellValue(value);
+
+        if (NumberUtil.isDouble(value)) {
+            targetCell.setCellValue(NumberUtil.parseDouble(value));
+        } else if (NumberUtil.isInteger(value)) {
+            targetCell.setCellValue(NumberUtil.parseInt(value));
+        } else {
+            targetCell.setCellValue(value);
         }
     }
 
@@ -141,27 +160,34 @@ public class ExcelUtils<T> {
         CellStyle newCellStyle = targetCell.getSheet().getWorkbook().createCellStyle();
         newCellStyle.cloneStyleFrom(sourceCell.getCellStyle());
         targetCell.setCellStyle(newCellStyle);
-
         // 根据单元格类型复制数据
-        switch (sourceCell.getCellType()) {
-            case BLANK, STRING:
-                targetCell.setCellValue(value != null ? value : sourceCell.getStringCellValue());
-                break;
-            case BOOLEAN:
-                targetCell.setCellValue(sourceCell.getBooleanCellValue());
-                break;
-            case ERROR:
-                targetCell.setCellValue(sourceCell.getErrorCellValue());
-                break;
-            case FORMULA:
-                targetCell.setCellFormula(sourceCell.getCellFormula());
-                break;
-            case NUMERIC:
-                targetCell.setCellValue(sourceCell.getNumericCellValue());
-                break;
-            default:
-                break;
+        if (NumberUtil.isDouble(value)) {
+            targetCell.setCellValue(NumberUtil.parseDouble(value));
+        } else if (NumberUtil.isInteger(value)) {
+            targetCell.setCellValue(NumberUtil.parseInt(value));
+        } else {
+            targetCell.setCellValue(value);
         }
+
+//        switch (sourceCell.getCellType()) {
+//            case BLANK, STRING:
+//                targetCell.setCellValue(value != null ? value : sourceCell.getStringCellValue());
+//                break;
+//            case BOOLEAN:
+//                targetCell.setCellValue(sourceCell.getBooleanCellValue());
+//                break;
+//            case ERROR:
+//                targetCell.setCellValue(sourceCell.getErrorCellValue());
+//                break;
+//            case FORMULA:
+//                targetCell.setCellFormula(sourceCell.getCellFormula());
+//                break;
+//            case NUMERIC:
+//                targetCell.setCellValue(sourceCell.getNumericCellValue());
+//                break;
+//            default:
+//                break;
+//        }
     }
 
 
