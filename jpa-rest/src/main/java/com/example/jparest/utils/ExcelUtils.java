@@ -151,46 +151,6 @@ public class ExcelUtils<T> {
         }
     }
 
-    public static void copyCell(Cell sourceCell, Cell targetCell, String value, int dataListRow) {
-        if (sourceCell == null || targetCell == null) {
-            return;
-        }
-
-        // 复制单元格样式
-        CellStyle newCellStyle = targetCell.getSheet().getWorkbook().createCellStyle();
-        newCellStyle.cloneStyleFrom(sourceCell.getCellStyle());
-        targetCell.setCellStyle(newCellStyle);
-        // 根据单元格类型复制数据
-        if (NumberUtil.isDouble(value)) {
-            targetCell.setCellValue(NumberUtil.parseDouble(value));
-        } else if (NumberUtil.isInteger(value)) {
-            targetCell.setCellValue(NumberUtil.parseInt(value));
-        } else {
-            targetCell.setCellValue(value);
-        }
-
-//        switch (sourceCell.getCellType()) {
-//            case BLANK, STRING:
-//                targetCell.setCellValue(value != null ? value : sourceCell.getStringCellValue());
-//                break;
-//            case BOOLEAN:
-//                targetCell.setCellValue(sourceCell.getBooleanCellValue());
-//                break;
-//            case ERROR:
-//                targetCell.setCellValue(sourceCell.getErrorCellValue());
-//                break;
-//            case FORMULA:
-//                targetCell.setCellFormula(sourceCell.getCellFormula());
-//                break;
-//            case NUMERIC:
-//                targetCell.setCellValue(sourceCell.getNumericCellValue());
-//                break;
-//            default:
-//                break;
-//        }
-    }
-
-
     public static void setCellStringValue(Cell cell, String value) {
         if (value != null) {
             cell.setCellValue(value);
