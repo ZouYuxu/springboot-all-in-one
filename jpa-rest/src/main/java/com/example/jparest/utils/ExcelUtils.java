@@ -1,19 +1,18 @@
 package com.example.jparest.utils;
 
 import cn.hutool.core.util.NumberUtil;
-import com.fasterxml.jackson.databind.JsonNode;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.*;
 
 import java.awt.Color;
-import java.util.List;
-import java.util.*;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import java.util.Iterator;
 
+@Slf4j
 public class ExcelUtils<T> {
 
     public static final String TEMPLATE = "template";
+
 
     private Class<T> eClass;
 
@@ -57,78 +56,19 @@ public class ExcelUtils<T> {
         }
     }
 
-    // copy column from one sheet to another
-    public static void copyColumn(Sheet sourceSheet, Sheet targetSheet, int sourceColumnIndex, int targetColumnIndex, List<String> list, int dataListRow, LinkedList<JsonNode> node, JsonNode data, HashMap<String, Integer> varLineMap) {
-        int i = 0;
-        List<String> ss = List.of("我真的", "kusi");
 
-        for (; i < dataListRow; i++) {
-            boolean flag = i >= dataListRow;
-            int index = i - dataListRow;
-            Row sourceRow = sourceSheet.getRow(flag ? dataListRow : i);
-//            sourceSheet.addMergedRegion(new CellRangeAddress())
-            Row targetRow = targetSheet.getRow(i);
-            String newValue = flag ? ss.get(index) : list.get(i);
-            // fix bug：brand column missing
-            if (targetRow == null) {
-                targetRow = targetSheet.createRow(i);
-            }
-            if (sourceRow != null) {
-                Cell sourceCell = sourceRow.getCell(sourceColumnIndex);
-                Cell newCell = targetRow.createCell(targetColumnIndex);
-                copyCell(sourceCell, newCell, newValue);
-            }
-        }
-
-
-        String sourceValue = sourceSheet.getRow(dataListRow).getCell(sourceColumnIndex).getStringCellValue();
-        sourceValue = sourceValue.substring(1, sourceValue.length() - 1);
-        String newPath = Pattern.compile("\\[(.*?)\\]").matcher(sourceValue).replaceAll(m -> {
-            String group = m.group(1);
-            // todo 在前面解决好路径的问题
-            group = group.replaceAll("\\.", "/");
-            String[] split = group.split("/");
-            String variable = split[0];
-            String collect = "/" + Arrays.stream(split).skip(1).collect(Collectors.joining("/"));
-//            collect =
-            Integer integer = varLineMap.get(variable);
-            JsonNode jsonNode = node.get(integer);
-            String text;
-            if (jsonNode.isObject()) {
-                text = jsonNode.at(collect).asText();
-            } else {
-                text = jsonNode.asText();
-            }
-            System.out.println(text);
-            return "/" + text;
-        });
-
-        // to:　data/sub/cost/point/10
-        newPath = newPath.replaceAll("\\.", "/");
-        // to: /sub/cost/point/10
-        newPath = newPath.substring(newPath.indexOf("/"));
-        List<String> strings = new ArrayList<>();
-        if (data.isArray()) {
-            for (JsonNode item : data) {
-                JsonNode at = item.at(newPath);
-                strings.add(at.asText());
-            }
-        }
-        for (; i < dataListRow + strings.size(); i++) {
-            boolean flag = i >= dataListRow;
-            int index = i - dataListRow;
-            Row sourceRow = sourceSheet.getRow(flag ? dataListRow : i);
-            Row targetRow = targetSheet.getRow(i);
-            String newValue = flag ? strings.get(index) : list.get(i);
-            // fix bug：brand column missing
-            if (targetRow == null) {
-                targetRow = targetSheet.createRow(i);
-            }
-            if (sourceRow != null) {
-                Cell sourceCell = sourceRow.getCell(sourceColumnIndex);
-                Cell newCell = targetRow.createCell(targetColumnIndex);
-                copyCell(sourceCell, newCell, newValue);
-            }
+    public static String getCellValue(Cell cell) {
+        switch (cell.getCellType()) {
+            case STRING:
+                return cell.getStringCellValue();
+            case NUMERIC:
+                return String.valueOf(cell.getNumericCellValue());
+            case BOOLEAN:
+                return String.valueOf(cell.getBooleanCellValue());
+            case FORMULA:
+                return cell.getCellFormula();
+            default:
+                return "";
         }
     }
 
