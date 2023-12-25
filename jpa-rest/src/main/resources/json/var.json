@@ -60,5 +60,9 @@
     "F132",
     "F216",
     "F721"
-  ]
+  ],
+  "keyName": "work",
+  "level1": {
+    "level2": "yes"
+  }
 }

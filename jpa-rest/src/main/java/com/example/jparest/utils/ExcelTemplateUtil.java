@@ -2,6 +2,7 @@ package com.example.jparest.utils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -17,10 +18,12 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Component
+@Data
 public class ExcelTemplateUtil {
     private int writeColumnIndex = 0; // write dest excel column index
     private int mergeColumnIndex = 0; // merge dest excel column index
-    private List<List<JsonNode>> variableNodes; // 每列所用的变数集合，index行，value：该行的用到的变量集合
+    private List<List<JsonNode>> variableNodes = new ArrayList<>(); // 每列所用的变数集合，index行，value：该行的用到的变量集合
+    private int dataListRow;
 
     // copy column from one sheet to another
     public void copyColumn(Sheet sourceSheet, Sheet targetSheet, int sourceColumnIndex, int targetColumnIndex, List<String> list, int dataListRow, LinkedList<JsonNode> node, JsonNode data, HashMap<String, Integer> varLineMap) {
@@ -81,7 +84,7 @@ public class ExcelTemplateUtil {
 
 
     public void fillTemplate(XSSFSheet sheet, XSSFSheet destSheet, JsonNode variables, JsonNode data) {
-        int dataListRow = 0;
+        dataListRow = 0;
         writeColumnIndex = 0;
         mergeColumnIndex = 0;
         List<CellRangeAddress> mergedRegions = sheet.getMergedRegions();
@@ -97,57 +100,13 @@ public class ExcelTemplateUtil {
             variableNodes = new ArrayList<>();
             for (int rowIndex = 0; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
                 XSSFRow row = sheet.getRow(rowIndex);
-                if (row != null) {
-                    Cell cell = row.getCell(columnIndex);
-
-                    if (cell != null) {
-                        String value = ExcelUtils.getCellValue(cell);
-
-                        // 变量，需要替换
-                        if (value.startsWith("{")) {
-
-                            String variable = value.substring(1, value.length() - 1);
-
-                            if (variable.contains("[")) {
-                                dataListRow = rowIndex;
-
-                            } else {
-                                String[] split = variable.split("\\.");
-                                String firstVariable = split[0];
-                                String others = variable.replaceFirst(firstVariable + ".", "");
-
-                                // 表示数组
-                                JsonNode arr = variables.get(firstVariable);
-                                if (arr == null) {
-                                    continue;
-                                }
-                                if (arr.isArray()) {
-                                    ArrayList<String> strings = new ArrayList<>();
-                                    ArrayList<JsonNode> tempNodes = new ArrayList<>();
-                                    for (JsonNode jsonNode : arr) {
-                                        String text;
-                                        if (jsonNode.isObject()) {
-                                            text = jsonNode.findPath(others).asText();
-                                        } else {
-                                            text = jsonNode.asText();
-                                        }
-                                        varIndexMap.put(firstVariable, rowIndex);
-                                        tempNodes.add(jsonNode);
-                                        strings.add(text);
-                                    }
-                                    variableNodes.add(tempNodes);
-                                    lists.add(strings);
-                                } else {
-                                    variableNodes.add(placeholderNodes);
-                                    lists.add(List.of(value));
-                                }
-                            }
-                        } else {
-                            variableNodes.add(placeholderNodes);
-                            lists.add(List.of(value));
-                        }
-                    }
+                Cell cell = row.getCell(columnIndex);
+                if (cell == null) {
+                    break;
                 }
+                String value = ExcelUtils.getCellValue(cell);
+
+                readVariables(variables, value, rowIndex, varIndexMap, lists, placeholderNodes);
             }
 
             createColumn(lists, new LinkedList<>(), 0, sheet, destSheet, columnIndex, dataListRow, new LinkedList<>(), data, varIndexMap);
@@ -160,6 +119,59 @@ public class ExcelTemplateUtil {
             destSheet.autoSizeColumn(i, true);
             destSheet.setColumnWidth(i, destSheet.getColumnWidth(i) * 11 / 10);
         }
+    }
+
+    public void readVariables(JsonNode variables, String value, int rowIndex, HashMap<String, Integer> varIndexMap, List<List<String>> lists, List<JsonNode> placeholderNodes) {
+        // 变量，需要替换
+        if (value.startsWith("{")) {
+
+            String variable = value.substring(1, value.length() - 1);
+
+            if (variable.contains("[")) {
+                dataListRow = rowIndex;
+
+            } else {
+                String[] split = variable.split("\\.");
+                extracted(variables, rowIndex, varIndexMap, lists, split, variable);
+            }
+        } else {
+            variableNodes.add(placeholderNodes);
+            lists.add(List.of(value));
+        }
+    }
+
+    private void extracted(JsonNode variables, int rowIndex, HashMap<String, Integer> varIndexMap, List<List<String>> lists, String[] split, String variable,int index) {
+        if (index == split.length) {
+
+        }
+        String firstVariable = split[0];
+        String others = variable.replaceFirst(firstVariable + ".", "");
+
+        // 表示数组
+        JsonNode arr = variables.get(firstVariable);
+        if (arr == null) {
+            return;
+        }
+        ArrayList<String> strings = new ArrayList<>();
+        ArrayList<JsonNode> tempNodes = new ArrayList<>();
+        if (arr.isArray()) {
+            for (JsonNode jsonNode : arr) {
+                String text;
+                if (jsonNode.isObject()) {
+                    text = jsonNode.findPath(others).asText();
+                } else {
+                    text = jsonNode.asText();
+                }
+                tempNodes.add(jsonNode);
+                strings.add(text);
+            }
+        } else {
+            tempNodes.add(arr);
+            strings.add(arr.asText());
+        }
+        varIndexMap.put(firstVariable, rowIndex);
+        variableNodes.add(tempNodes);
+        lists.add(strings);
     }
 
 
