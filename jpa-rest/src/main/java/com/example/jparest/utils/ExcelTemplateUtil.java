@@ -9,46 +9,26 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Slf4j
+@Component
 public class ExcelTemplateUtil {
-    private static int writeColumnIndex = 0; // write dest excel column index
-    private static int mergeColumnIndex = 0; // merge dest excel column index
-    private static List<List<JsonNode>> variableNodes; // 每列所用的变数集合，index行，value：该行的用到的变量集合
+    private int writeColumnIndex = 0; // write dest excel column index
+    private int mergeColumnIndex = 0; // merge dest excel column index
+    private List<List<JsonNode>> variableNodes; // 每列所用的变数集合，index行，value：该行的用到的变量集合
 
     // copy column from one sheet to another
     public void copyColumn(Sheet sourceSheet, Sheet targetSheet, int sourceColumnIndex, int targetColumnIndex, List<String> list, int dataListRow, LinkedList<JsonNode> node, JsonNode data, HashMap<String, Integer> varLineMap) {
-        int i = 0;
-        List<String> ss = List.of("我真的", "kusi");
-
-        for (; i < dataListRow; i++) {
-            boolean flag = i >= dataListRow;
-            int index = i - dataListRow;
-            Row sourceRow = sourceSheet.getRow(flag ? dataListRow : i);
-//            sourceSheet.addMergedRegion(new CellRangeAddress())
-            Row targetRow = targetSheet.getRow(i);
-            String newValue = flag ? ss.get(index) : list.get(i);
-            // fix bug：brand column missing
-            if (targetRow == null) {
-                targetRow = targetSheet.createRow(i);
-            }
-            if (sourceRow != null) {
-                Cell sourceCell = sourceRow.getCell(sourceColumnIndex);
-                Cell newCell = targetRow.createCell(targetColumnIndex);
-                ExcelUtils.copyCell(sourceCell, newCell, newValue);
-            }
-        }
-
-
         String sourceValue = sourceSheet.getRow(dataListRow).getCell(sourceColumnIndex).getStringCellValue();
         sourceValue = sourceValue.substring(1, sourceValue.length() - 1);
         String newPath = Pattern.compile("\\[(.*?)\\]").matcher(sourceValue).replaceAll(m -> {
             String group = m.group(1);
-            // todo 在前面解决好路径的问题
+            // 在前面解决好路径的问题
             group = group.replaceAll("\\.", "/");
             String[] split = group.split("/");
             String variable = split[0];
@@ -62,7 +42,6 @@ public class ExcelTemplateUtil {
             } else {
                 text = jsonNode.asText();
             }
-            System.out.println(text);
             return "/" + text;
         });
 
@@ -74,10 +53,15 @@ public class ExcelTemplateUtil {
         if (data.isArray()) {
             for (JsonNode item : data) {
                 JsonNode at = item.at(newPath);
-                strings.add(at.asText());
+                if (at.isNull()) {
+                    strings.add("");
+                } else {
+                    strings.add(at.asText());
+                }
             }
         }
-        for (; i < dataListRow + strings.size(); i++) {
+
+        for (int i = 0; i < dataListRow + strings.size(); i++) {
             boolean flag = i >= dataListRow;
             int index = i - dataListRow;
             Row sourceRow = sourceSheet.getRow(flag ? dataListRow : i);
@@ -98,6 +82,8 @@ public class ExcelTemplateUtil {
 
     public void fillTemplate(XSSFSheet sheet, XSSFSheet destSheet, JsonNode variables, JsonNode data) {
         int dataListRow = 0;
+        writeColumnIndex = 0;
+        mergeColumnIndex = 0;
         List<CellRangeAddress> mergedRegions = sheet.getMergedRegions();
         // 先列后行，这样可以方便生成
         for (int columnIndex = 0; columnIndex < sheet.getRow(0).getLastCellNum(); columnIndex++) {
@@ -155,14 +141,11 @@ public class ExcelTemplateUtil {
                                     variableNodes.add(placeholderNodes);
                                     lists.add(List.of(value));
                                 }
-                                log.info("{} --- {}", firstVariable, variable);
                             }
                         } else {
                             variableNodes.add(placeholderNodes);
                             lists.add(List.of(value));
                         }
-                        // 输出单元格内容
-                        log.info("[{}, {}]: {}", rowIndex, columnIndex, value);
                     }
                 }
             }
@@ -222,7 +205,6 @@ public class ExcelTemplateUtil {
                     break;
                 }
                 destSheet.addMergedRegion(new CellRangeAddress(rowIndex, lastRowIndex, firstCol, lastCol));
-                log.info("{}-{}: {}", rowIndex, sizeIndex, nextSize);
             } else {
                 if (rowIndex != 0 && rowVarSize == 1 && rowVars.get(0).isEmpty()) {
                     break;
