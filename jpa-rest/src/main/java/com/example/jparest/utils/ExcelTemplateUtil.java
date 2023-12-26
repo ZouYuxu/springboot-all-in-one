@@ -83,7 +83,7 @@ public class ExcelTemplateUtil {
     }
 
 
-    public void fillTemplate(XSSFSheet sheet, XSSFSheet destSheet, JsonNode variables, JsonNode data) {
+    public void fillTemplate(XSSFSheet sheet, XSSFSheet destSheet, JsonNode variables, JsonNode data) throws Exception {
         dataListRow = 0;
         writeColumnIndex = 0;
         mergeColumnIndex = 0;
@@ -121,7 +121,7 @@ public class ExcelTemplateUtil {
         }
     }
 
-    public void readVariables(JsonNode variables, String value, int rowIndex, HashMap<String, Integer> varIndexMap, List<List<String>> lists, List<JsonNode> placeholderNodes) {
+    public void readVariables(JsonNode variables, String value, int rowIndex, HashMap<String, Integer> varIndexMap, List<List<String>> lists, List<JsonNode> placeholderNodes) throws Exception {
         // 变量，需要替换
         if (value.startsWith("{")) {
 
@@ -131,8 +131,13 @@ public class ExcelTemplateUtil {
                 dataListRow = rowIndex;
 
             } else {
+                ArrayList<String> strings = new ArrayList<>();
+                ArrayList<JsonNode> tempNodes = new ArrayList<>();
                 String[] split = variable.split("\\.");
-                extracted(variables, rowIndex, varIndexMap, lists, split, variable);
+//                extracted(variables, rowIndex, varIndexMap, lists, split, variable);
+                findValue(variables, rowIndex, varIndexMap, strings, tempNodes, split, 0);
+                variableNodes.add(tempNodes);
+                lists.add(strings);
             }
         } else {
             variableNodes.add(placeholderNodes);
@@ -140,8 +145,46 @@ public class ExcelTemplateUtil {
         }
     }
 
-    private void extracted(JsonNode variables, int rowIndex, HashMap<String, Integer> varIndexMap, List<List<String>> lists, String[] split, String variable,int index) {
+    void findValue(JsonNode variable, int rowIndex, HashMap<String, Integer> varIndexMap, ArrayList<String> strings, ArrayList<JsonNode> tempNodes, String[] split, int index) throws Exception {
+        findValue(variable, rowIndex, varIndexMap, strings, tempNodes, split, index, "");
+    }
+
+    void findValue(JsonNode variable, int rowIndex, HashMap<String, Integer> varIndexMap, ArrayList<String> strings, ArrayList<JsonNode> tempNodes, String[] split, int index, String path) throws Exception {
+        // 表示数组
+        if (variable == null) {
+            throw new Exception(path + " is not exist in variables");
+        }
         if (index == split.length) {
+            strings.add(variable.asText());
+            return;
+        }
+        String var = split[index];
+
+//        else
+        if (index == 0) {
+            varIndexMap.put(var, rowIndex);
+        }
+
+
+        if (variable.isArray()) {
+            int i = 0;
+            for (JsonNode jsonNode : variable) {
+                if (index == split.length - 1) {
+                    tempNodes.add(jsonNode);
+                }
+                findValue(jsonNode.get(var), rowIndex, varIndexMap, strings, tempNodes, split, index + 1, path + "/" + (i++) + "/" + var);
+            }
+        } else {
+            if (index == split.length - 1) {
+                tempNodes.add(variable);
+            }
+            findValue(variable.get(var), rowIndex, varIndexMap, strings, tempNodes, split, index + 1, path + "/" + var);
+        }
+
+    }
+
+    private void extracted(JsonNode variables, int rowIndex, HashMap<String, Integer> varIndexMap, List<List<String>> lists, String[] split, String variable, int index) {
+        if (index == split.length - 1) {
 
         }
         String firstVariable = split[0];

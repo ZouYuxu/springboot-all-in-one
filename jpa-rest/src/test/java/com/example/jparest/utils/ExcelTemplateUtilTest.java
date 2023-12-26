@@ -16,6 +16,7 @@ import java.io.InputStream;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ExcelTemplateUtilTest {
     List<List<JsonNode>> variableNodes;
@@ -26,6 +27,7 @@ class ExcelTemplateUtilTest {
 
     ObjectMapper mapper = new ObjectMapper();
     private JsonNode variables;
+    private JsonNode array;
     HashMap<String, Integer> varIndexMap = new HashMap<>();
     List<JsonNode> placeholderNodes = List.of(JsonNodeFactory.instance.objectNode());
     List<List<String>> lists = new ArrayList<>();
@@ -36,6 +38,7 @@ class ExcelTemplateUtilTest {
 
         InputStream stream = ResourceUtil.getStreamSafe("json/var.json");
         variables = mapper.readTree(stream);
+        array = mapper.readTree(ResourceUtil.getStreamSafe("json/test.json"));
         variableNodes = new ArrayList<>();
     }
 
@@ -45,7 +48,7 @@ class ExcelTemplateUtilTest {
     }
 
     @Test
-    void readVariables() {
+    void readVariables() throws Exception {
         excelTemplateUtil.readVariables(variables, "{class.key}", 0, varIndexMap, lists, placeholderNodes);
         List<String> strings = lists.get(0);
         assertEquals(List.of("cost", "delivery", "quality", "esg", "design"), strings);
@@ -53,15 +56,15 @@ class ExcelTemplateUtilTest {
     }
 
     @Test
-    void readVariabless() {
-        excelTemplateUtil.readVariables(variables, "{class.keys}", 0, varIndexMap, lists, placeholderNodes);
+    void readVariabless() throws Exception {
+        assertThrows(Exception.class, () -> excelTemplateUtil.readVariables(variables, "{class.keys}", 0, varIndexMap, lists, placeholderNodes), "/class/0/keys is not exist in variables");
         List<String> strings = lists.get(0);
         assertEquals(List.of("cost", "delivery", "quality", "esg", "design"), strings);
         assertEquals(0, varIndexMap.get("class"));
     }
 
     @Test
-    void readSingleValue() {
+    void readSingleValue() throws Exception {
         excelTemplateUtil.readVariables(variables, "{keyName}", 0, varIndexMap, lists, placeholderNodes);
         List<String> strings = lists.get(0);
         List<List<JsonNode>> variableNodes = excelTemplateUtil.getVariableNodes();
@@ -70,16 +73,64 @@ class ExcelTemplateUtilTest {
     }
 
     @Test
-    void readMultipleValue() {
+    void readMultipleValue() throws Exception {
         excelTemplateUtil.readVariables(variables, "{level1.level2}", 0, varIndexMap, lists, placeholderNodes);
         List<String> strings = lists.get(0);
+        List<List<JsonNode>> variableNodes = excelTemplateUtil.getVariableNodes();
+        assertEquals(List.of("yes"), strings);
+        assertEquals(0, varIndexMap.get("level1"));
+    }
+
+    @Test
+    void findValue() throws Exception {
+        String[] split = new String[]{"level1", "level2"};
+        ArrayList<String> strings = new ArrayList<>();
+        ArrayList<JsonNode> tempNodes = new ArrayList<>();
+        excelTemplateUtil.findValue(variables, 0, varIndexMap, strings, tempNodes, split, 0);
+//        List<String> strings = lists.get(0);
         List<List<JsonNode>> variableNodes = excelTemplateUtil.getVariableNodes();
         assertEquals(List.of("work"), strings);
         assertEquals(0, varIndexMap.get("keyName"));
     }
 
     @Test
-    void testFillTemplate() {
+    void findArrayValue() throws Exception {
+        String[] split = new String[]{"data", "key"};
+        ArrayList<String> strings = new ArrayList<>();
+        ArrayList<JsonNode> tempNodes = new ArrayList<>();
+        excelTemplateUtil.findValue(array, 0, varIndexMap, strings, tempNodes, split, 0);
+//        List<String> strings = lists.get(0);
+        List<List<JsonNode>> variableNodes = excelTemplateUtil.getVariableNodes();
+        assertEquals(List.of("work"), strings);
+        assertEquals(0, varIndexMap.get("keyName"));
+    }
+
+    @Test
+    void findArrayKey() throws Exception {
+        String[] split = new String[]{"key"};
+        ArrayList<String> strings = new ArrayList<>();
+        ArrayList<JsonNode> tempNodes = new ArrayList<>();
+        excelTemplateUtil.findValue(array, 0, varIndexMap, strings, tempNodes, split, 0);
+//        List<String> strings = lists.get(0);
+        List<List<JsonNode>> variableNodes = excelTemplateUtil.getVariableNodes();
+        assertEquals(List.of("work"), strings);
+        assertEquals(0, varIndexMap.get("keyName"));
+    }
+
+    @Test
+    void findArrayNestKey() throws Exception {
+        String[] split = new String[]{"object", "key"};
+        ArrayList<String> strings = new ArrayList<>();
+        ArrayList<JsonNode> tempNodes = new ArrayList<>();
+        excelTemplateUtil.findValue(array, 0, varIndexMap, strings, tempNodes, split, 0);
+//        List<String> strings = lists.get(0);
+        List<List<JsonNode>> variableNodes = excelTemplateUtil.getVariableNodes();
+        assertEquals(List.of("work"), strings);
+        assertEquals(0, varIndexMap.get("keyName"));
+    }
+
+    @Test
+    void testFillTemplate() throws Exception {
         excelTemplateUtil.fillTemplate(null, null, null, null);
     }
 }

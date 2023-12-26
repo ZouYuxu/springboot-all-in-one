@@ -1,0 +1,56 @@
+[
+  {
+    "key": "delivery",
+    "name": "交期",
+    "data": [
+      {
+        "key": "quality",
+        "name": "品質"
+      },
+      {
+        "key": "esg",
+        "name": "永續"
+      }
+    ],
+    "object": {
+      "key": "delivery",
+      "name": "交期"
+    }
+  },
+  {
+    "key": "quality",
+    "name": "品質",
+    "data": [
+      {
+        "key": "quality",
+        "name": "品質"
+      },
+      {
+        "key": "esg",
+        "name": "永續"
+      }
+    ],
+    "object": {
+      "key": "delivery",
+      "name": "交期"
+    }
+  },
+  {
+    "key": "esg",
+    "name": "永續",
+    "data": [
+      {
+        "key": "quality",
+        "name": "品質"
+      },
+      {
+        "key": "esg",
+        "name": "永續"
+      }
+    ],
+    "object": {
+      "key": "delivery",
+      "name": "交期"
+    }
+  }
+]
