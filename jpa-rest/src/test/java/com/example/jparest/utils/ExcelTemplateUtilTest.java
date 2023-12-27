@@ -22,6 +22,7 @@ import static com.example.jparest.service.EvaluationAnalyseDownloadService.DEST_
 import static org.junit.jupiter.api.Assertions.*;
 
 class ExcelTemplateUtilTest {
+    public static final String EASY = "easy";
     public static final String EASY_1 = "easy_1";
     public static final String EASY_2 = "easy_2";
     public static final String EASY_3 = "easy_3";
@@ -38,18 +39,21 @@ class ExcelTemplateUtilTest {
     List<JsonNode> placeholderNodes = List.of(JsonNodeFactory.instance.objectNode());
     List<List<String>> lists = new ArrayList<>();
     private InputStream easy;
+    private InputStream evaluationContentAgg;
     private JsonNode data;
+    private JsonNode evaluationContentAggData;
 
     @BeforeEach
     void setUp() throws IOException {
         MockitoAnnotations.openMocks(this);
 
-        InputStream stream = ResourceUtil.getStreamSafe("json/var.json");
-        variables = mapper.readTree(stream);
+        variables = mapper.readTree(ResourceUtil.getStreamSafe("json/var.json"));
         array = mapper.readTree(ResourceUtil.getStreamSafe("json/test.json"));
         data = mapper.readTree(ResourceUtil.getStreamSafe("json/data.json"));
+        evaluationContentAggData = mapper.readTree(ResourceUtil.getStreamSafe("json/EvaluationContentAgg_data.json"));
         variableNodes = new ArrayList<>();
         easy = ResourceUtil.getStream("template/easy.xlsx");
+        evaluationContentAgg = ResourceUtil.getStream("templates/EvaluationContentAggFile.xlsx");
         System.out.println();
     }
 
@@ -159,16 +163,35 @@ class ExcelTemplateUtilTest {
         assertEquals(0, varIndexMap.get("object"));
     }
 
-    @Test
+    //    @Test
     void testFillTemplate() throws Exception {
         try (XSSFWorkbook wb = new XSSFWorkbook(easy);
              XSSFWorkbook newBook = new XSSFWorkbook();
              FileOutputStream outputStream = new FileOutputStream(DEST_FILE_PATH)) {
-            XSSFSheet sheet = wb.getSheet(EASY_3);
+            XSSFSheet sheet = wb.getSheet(EASY);
             XSSFSheet destSheet = newBook.createSheet();
 
             ExcelTemplateUtil excelTemplateUtil = new ExcelTemplateUtil();
             excelTemplateUtil.fillTemplate(sheet, destSheet, variables, data);
+            newBook.write(outputStream);
+            outputStream.close();
+            System.out.println();
+        } catch (
+                Exception e) {
+            throw new Exception("生成Excel发生错误！", e);
+        }
+    }
+
+    @Test
+    void testFillEvaluationContentAgg() throws Exception {
+        try (XSSFWorkbook wb = new XSSFWorkbook(evaluationContentAgg);
+             XSSFWorkbook newBook = new XSSFWorkbook();
+             FileOutputStream outputStream = new FileOutputStream(DEST_FILE_PATH + "_1")) {
+            XSSFSheet sheet = wb.getSheetAt(0);
+            XSSFSheet destSheet = newBook.createSheet();
+
+            ExcelTemplateUtil excelTemplateUtil = new ExcelTemplateUtil();
+            excelTemplateUtil.fillTemplate(sheet, destSheet, variables, evaluationContentAggData);
             newBook.write(outputStream);
             outputStream.close();
             System.out.println();
