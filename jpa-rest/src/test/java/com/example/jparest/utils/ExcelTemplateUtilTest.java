@@ -4,6 +4,8 @@ import cn.hutool.core.io.resource.ResourceUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -11,13 +13,18 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.slf4j.Logger;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
+import static com.example.jparest.service.EvaluationAnalyseDownloadService.DEST_FILE_PATH;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ExcelTemplateUtilTest {
+    public static final String EASY_1 = "easy_1";
+    public static final String EASY_2 = "easy_2";
+    public static final String EASY_3 = "easy_3";
     List<List<JsonNode>> variableNodes;
     @Mock
     Logger log;
@@ -30,6 +37,8 @@ class ExcelTemplateUtilTest {
     HashMap<String, Integer> varIndexMap = new HashMap<>();
     List<JsonNode> placeholderNodes = List.of(JsonNodeFactory.instance.objectNode());
     List<List<String>> lists = new ArrayList<>();
+    private InputStream easy;
+    private JsonNode data;
 
     @BeforeEach
     void setUp() throws IOException {
@@ -38,12 +47,22 @@ class ExcelTemplateUtilTest {
         InputStream stream = ResourceUtil.getStreamSafe("json/var.json");
         variables = mapper.readTree(stream);
         array = mapper.readTree(ResourceUtil.getStreamSafe("json/test.json"));
+        data = mapper.readTree(ResourceUtil.getStreamSafe("json/data.json"));
         variableNodes = new ArrayList<>();
+        easy = ResourceUtil.getStream("template/easy.xlsx");
+        System.out.println();
     }
 
-//    @Test
+    //    @Test
     void testCopyColumn() {
         excelTemplateUtil.copyColumn(null, null, 0, 0, List.of("list"), 0, new LinkedList<>(List.of(null)), null, new HashMap<>(Map.of("varLineMap", Integer.valueOf(0))));
+    }
+
+    @Test
+    void readVariables_const() throws Exception {
+        excelTemplateUtil.readVariables(variables, "整合", 0, varIndexMap, lists, placeholderNodes);
+        List<String> strings = lists.get(0);
+        assertEquals(List.of("整合"), strings);
     }
 
     @Test
@@ -93,6 +112,18 @@ class ExcelTemplateUtilTest {
     }
 
     @Test
+    void findStringArrayValue() throws Exception {
+        String[] split = new String[]{"mon"};
+        ArrayList<String> strings = new ArrayList<>();
+        ArrayList<JsonNode> tempNodes = new ArrayList<>();
+        excelTemplateUtil.findValue(variables, 0, varIndexMap, strings, tempNodes, split, 0);
+//        List<String> strings = lists.get(0);
+        List<List<JsonNode>> variableNodes = excelTemplateUtil.getVariableNodes();
+        assertEquals(List.of("10", "11", "12"), strings);
+        assertEquals(0, varIndexMap.get("mon"));
+    }
+
+    @Test
     void findArrayValue() throws Exception {
         String[] split = new String[]{"data", "key"};
         ArrayList<String> strings = new ArrayList<>();
@@ -124,13 +155,27 @@ class ExcelTemplateUtilTest {
         excelTemplateUtil.findValue(array, 0, varIndexMap, strings, tempNodes, split, 0);
 //        List<String> strings = lists.get(0);
         List<List<JsonNode>> variableNodes = excelTemplateUtil.getVariableNodes();
-        assertEquals(List.of("delivery","delivery","delivery"), strings);
+        assertEquals(List.of("delivery", "delivery", "delivery"), strings);
         assertEquals(0, varIndexMap.get("object"));
     }
 
-//    @Test
+    @Test
     void testFillTemplate() throws Exception {
-        excelTemplateUtil.fillTemplate(null, null, null, null);
+        try (XSSFWorkbook wb = new XSSFWorkbook(easy);
+             XSSFWorkbook newBook = new XSSFWorkbook();
+             FileOutputStream outputStream = new FileOutputStream(DEST_FILE_PATH)) {
+            XSSFSheet sheet = wb.getSheet(EASY_3);
+            XSSFSheet destSheet = newBook.createSheet();
+
+            ExcelTemplateUtil excelTemplateUtil = new ExcelTemplateUtil();
+            excelTemplateUtil.fillTemplate(sheet, destSheet, variables, data);
+            newBook.write(outputStream);
+            outputStream.close();
+            System.out.println();
+        } catch (
+                Exception e) {
+            throw new Exception("生成Excel发生错误！", e);
+        }
     }
 }
 

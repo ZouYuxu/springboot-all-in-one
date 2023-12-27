@@ -134,7 +134,6 @@ public class ExcelTemplateUtil {
                 ArrayList<String> strings = new ArrayList<>();
                 ArrayList<JsonNode> tempNodes = new ArrayList<>();
                 String[] split = variable.split("\\.");
-//                extracted(variables, rowIndex, varIndexMap, lists, split, variable);
                 findValue(variables, rowIndex, varIndexMap, strings, tempNodes, split, 0);
                 variableNodes.add(tempNodes);
                 lists.add(strings);
@@ -149,74 +148,62 @@ public class ExcelTemplateUtil {
         findValue(variable, rowIndex, varIndexMap, strings, tempNodes, split, index, "");
     }
 
-    void findValue(JsonNode variable, int rowIndex, HashMap<String, Integer> varIndexMap, ArrayList<String> strings, ArrayList<JsonNode> tempNodes, String[] split, int index, String path) throws Exception {
+    private void findValue(JsonNode variable, int rowIndex, HashMap<String, Integer> varIndexMap, ArrayList<String> strings, ArrayList<JsonNode> tempNodes, String[] split, int index, String path) throws Exception {
         // 表示数组
         if (variable == null) {
             throw new Exception(path + " is not exist in variables");
         }
-        if (index == split.length) {
-            strings.add(variable.asText());
+        boolean isLast = index == split.length - 1;
+        boolean isLastPlus1 = index == split.length;
+        if (isLastPlus1) {
+            if (variable.isValueNode()) {
+                strings.add(variable.asText());
+            } else if (variable.isArray()) {
+                // 字串数组，就都保存起来
+                boolean areAllValue = true;
+                ArrayList<String> temp = new ArrayList<>();
+                ArrayList<JsonNode> tempNode = new ArrayList<>();
+
+                for (JsonNode jsonNode : variable) {
+                    if (jsonNode.isValueNode()) {
+                        tempNode.add(jsonNode);
+                        temp.add(jsonNode.asText());
+                    } else {
+                        areAllValue = false;
+                    }
+                }
+                // 先清空，再加上temp nodes
+                if (areAllValue) {
+                    tempNodes.clear();
+                    tempNodes.addAll(tempNode);
+                    strings.addAll(temp);
+                }
+            }
             return;
         }
         String var = split[index];
-
 //        else
         if (index == 0) {
             varIndexMap.put(var, rowIndex);
         }
 
-
         if (variable.isArray()) {
             int i = 0;
             for (JsonNode jsonNode : variable) {
-                if (index == split.length - 1) {
+                if (isLast) {
                     tempNodes.add(jsonNode);
                 }
                 findValue(jsonNode.get(var), rowIndex, varIndexMap, strings, tempNodes, split, index + 1, path + "/" + (i++) + "/" + var);
+
             }
         } else {
-            if (index == split.length - 1) {
+            if (isLast) {
                 tempNodes.add(variable);
             }
             findValue(variable.get(var), rowIndex, varIndexMap, strings, tempNodes, split, index + 1, path + "/" + var);
         }
 
     }
-
-    private void extracted(JsonNode variables, int rowIndex, HashMap<String, Integer> varIndexMap, List<List<String>> lists, String[] split, String variable, int index) {
-        if (index == split.length - 1) {
-
-        }
-        String firstVariable = split[0];
-        String others = variable.replaceFirst(firstVariable + ".", "");
-
-        // 表示数组
-        JsonNode arr = variables.get(firstVariable);
-        if (arr == null) {
-            return;
-        }
-        ArrayList<String> strings = new ArrayList<>();
-        ArrayList<JsonNode> tempNodes = new ArrayList<>();
-        if (arr.isArray()) {
-            for (JsonNode jsonNode : arr) {
-                String text;
-                if (jsonNode.isObject()) {
-                    text = jsonNode.findPath(others).asText();
-                } else {
-                    text = jsonNode.asText();
-                }
-                tempNodes.add(jsonNode);
-                strings.add(text);
-            }
-        } else {
-            tempNodes.add(arr);
-            strings.add(arr.asText());
-        }
-        varIndexMap.put(firstVariable, rowIndex);
-        variableNodes.add(tempNodes);
-        lists.add(strings);
-    }
-
 
     private int createMerge(int rowIndex, List<List<String>> lists, int dataListRow, int columnIndex, XSSFSheet destSheet, Optional<CellRangeAddress> rangeAddress) {
         List<String> rowVars = lists.get(rowIndex);
