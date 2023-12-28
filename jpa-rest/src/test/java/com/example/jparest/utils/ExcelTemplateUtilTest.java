@@ -56,7 +56,7 @@ class ExcelTemplateUtilTest {
         evaluationContentAggData = mapper.readTree(ResourceUtil.getStreamSafe("json/EvaluationContentAgg_data.json"));
         variableNodes = new ArrayList<>();
         easy = ResourceUtil.getStream("template/easy.xlsx");
-        evaluationContentAgg = ResourceUtil.getStream("templates/EvaluationContentAggFile.xlsx");
+        evaluationContentAgg = ResourceUtil.getStream("template/EvaluationContentAggFile.xlsx");
         error = ResourceUtil.getStream("template/error.xlsx");
 
         errorWb = new XSSFWorkbook(error);
