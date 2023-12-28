@@ -163,7 +163,7 @@ class ExcelTemplateUtilTest {
         assertEquals(0, varIndexMap.get("object"));
     }
 
-    //    @Test
+        @Test
     void testFillTemplate() throws Exception {
         try (XSSFWorkbook wb = new XSSFWorkbook(easy);
              XSSFWorkbook newBook = new XSSFWorkbook();
@@ -186,7 +186,7 @@ class ExcelTemplateUtilTest {
     void testFillEvaluationContentAgg() throws Exception {
         try (XSSFWorkbook wb = new XSSFWorkbook(evaluationContentAgg);
              XSSFWorkbook newBook = new XSSFWorkbook();
-             FileOutputStream outputStream = new FileOutputStream(DEST_FILE_PATH + "_1")) {
+             FileOutputStream outputStream = new FileOutputStream( DEST_FILE_PATH +".xlsx" )) {
             XSSFSheet sheet = wb.getSheetAt(0);
             XSSFSheet destSheet = newBook.createSheet();
 

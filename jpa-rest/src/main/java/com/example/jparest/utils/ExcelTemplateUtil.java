@@ -129,7 +129,8 @@ public class ExcelTemplateUtil {
 
             if (variable.contains("[")) {
                 dataListRow = rowIndex;
-
+                // fix: 单行表头的时候报错
+                lists.add(List.of(value));
             } else {
                 ArrayList<String> strings = new ArrayList<>();
                 ArrayList<JsonNode> tempNodes = new ArrayList<>();
