@@ -40,8 +40,11 @@ class ExcelTemplateUtilTest {
     List<List<String>> lists = new ArrayList<>();
     private InputStream easy;
     private InputStream evaluationContentAgg;
+    private InputStream error;
     private JsonNode data;
     private JsonNode evaluationContentAggData;
+    private XSSFWorkbook errorWb;
+    private XSSFWorkbook wb;
 
     @BeforeEach
     void setUp() throws IOException {
@@ -54,11 +57,15 @@ class ExcelTemplateUtilTest {
         variableNodes = new ArrayList<>();
         easy = ResourceUtil.getStream("template/easy.xlsx");
         evaluationContentAgg = ResourceUtil.getStream("templates/EvaluationContentAggFile.xlsx");
+        error = ResourceUtil.getStream("template/error.xlsx");
+
+        errorWb = new XSSFWorkbook(error);
+        wb = new XSSFWorkbook(easy);
         System.out.println();
     }
 
     //    @Test
-    void testCopyColumn() {
+    void testCopyColumn() throws Exception {
         excelTemplateUtil.copyColumn(null, null, 0, 0, List.of("list"), 0, new LinkedList<>(List.of(null)), null, new HashMap<>(Map.of("varLineMap", Integer.valueOf(0))));
     }
 
@@ -163,10 +170,9 @@ class ExcelTemplateUtilTest {
         assertEquals(0, varIndexMap.get("object"));
     }
 
-        @Test
+    @Test
     void testFillTemplate() throws Exception {
-        try (XSSFWorkbook wb = new XSSFWorkbook(easy);
-             XSSFWorkbook newBook = new XSSFWorkbook();
+        try (XSSFWorkbook newBook = new XSSFWorkbook();
              FileOutputStream outputStream = new FileOutputStream(DEST_FILE_PATH)) {
             XSSFSheet sheet = wb.getSheet(EASY);
             XSSFSheet destSheet = newBook.createSheet();
@@ -186,7 +192,7 @@ class ExcelTemplateUtilTest {
     void testFillEvaluationContentAgg() throws Exception {
         try (XSSFWorkbook wb = new XSSFWorkbook(evaluationContentAgg);
              XSSFWorkbook newBook = new XSSFWorkbook();
-             FileOutputStream outputStream = new FileOutputStream( DEST_FILE_PATH +".xlsx" )) {
+             FileOutputStream outputStream = new FileOutputStream(DEST_FILE_PATH + ".xlsx")) {
             XSSFSheet sheet = wb.getSheetAt(0);
             XSSFSheet destSheet = newBook.createSheet();
 
@@ -199,6 +205,22 @@ class ExcelTemplateUtilTest {
                 Exception e) {
             throw new Exception("生成Excel发生错误！", e);
         }
+    }
+
+    @Test
+    void testFillErrorTemplate()  {
+//        XSSFWorkbook newBook = new XSSFWorkbook();
+//        FileOutputStream outputStream = new FileOutputStream(DEST_FILE_PATH);
+        XSSFSheet sheet = errorWb.getSheetAt(0);
+        XSSFSheet sheet1 = errorWb.getSheetAt(1);
+
+        XSSFSheet destSheet = errorWb.createSheet();
+
+        ExcelTemplateUtil excelTemplateUtil = new ExcelTemplateUtil();
+//            excelTemplateUtil.fillTemplate(sheet, destSheet, variables, evaluationContentAggData);
+        assertThrows(Exception.class, () -> excelTemplateUtil.fillTemplate(sheet, destSheet, variables, evaluationContentAggData), "/keys is not exist in variables {\"name\":\"brand\",\"key\":\"brand\"}");
+        assertThrows(Exception.class, () -> excelTemplateUtil.fillTemplate(sheet1, destSheet, variables, evaluationContentAggData),"dfsa");
+
     }
 }
 

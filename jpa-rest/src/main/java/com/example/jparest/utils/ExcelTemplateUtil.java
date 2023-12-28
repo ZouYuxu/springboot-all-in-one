@@ -26,7 +26,7 @@ public class ExcelTemplateUtil {
     private int dataListRow;
 
     // copy column from one sheet to another
-    public void copyColumn(Sheet sourceSheet, Sheet targetSheet, int sourceColumnIndex, int targetColumnIndex, List<String> list, int dataListRow, LinkedList<JsonNode> node, JsonNode data, HashMap<String, Integer> varLineMap) {
+    public void copyColumn(Sheet sourceSheet, Sheet targetSheet, int sourceColumnIndex, int targetColumnIndex, List<String> list, int dataListRow, LinkedList<JsonNode> node, JsonNode data, HashMap<String, Integer> varLineMap) throws Exception {
         String sourceValue = sourceSheet.getRow(dataListRow).getCell(sourceColumnIndex).getStringCellValue();
         sourceValue = sourceValue.substring(1, sourceValue.length() - 1);
         String newPath = Pattern.compile("\\[(.*?)\\]").matcher(sourceValue).replaceAll(m -> {
@@ -37,11 +37,23 @@ public class ExcelTemplateUtil {
             String variable = split[0];
             String collect = "/" + Arrays.stream(split).skip(1).collect(Collectors.joining("/"));
 //            collect =
+            if (!varLineMap.containsKey(variable)) {
+                throw new NullPointerException(String.format("%s is not exist in column variables", variable));
+            }
             Integer integer = varLineMap.get(variable);
             JsonNode jsonNode = node.get(integer);
             String text;
+//            if (jsonNode.isNull()) {
+//                log.error("{} is not exist in variables {}", collect, jsonNode.toPrettyString());
+//                throw new NullPointerException(String.format("%s is not exist in variables %s", collect, jsonNode.toPrettyString()));
+//            } else
             if (jsonNode.isObject()) {
-                text = jsonNode.at(collect).asText();
+                JsonNode at = jsonNode.at(collect);
+                if (at.isMissingNode()) {
+                    throw new NullPointerException(String.format("%s is not exist in variables %s", collect, jsonNode));
+                } else {
+                    text = at.asText();
+                }
             } else {
                 text = jsonNode.asText();
             }
@@ -50,18 +62,25 @@ public class ExcelTemplateUtil {
 
         // to:　data/sub/cost/point/10
         newPath = newPath.replaceAll("\\.", "/");
-        // to: /sub/cost/point/10
-        newPath = newPath.substring(newPath.indexOf("/"));
+        // 单字符可选可不选
+        if (newPath.startsWith("//")) {
+            newPath = newPath.substring(1);
+        } else {
+            // to: /sub/cost/point/10
+            newPath = newPath.substring(newPath.indexOf("/"));
+        }
         List<String> strings = new ArrayList<>();
         if (data.isArray()) {
             for (JsonNode item : data) {
                 JsonNode at = item.at(newPath);
-                if (at.isNull()) {
+                if (at.isMissingNode()) {
                     strings.add("");
                 } else {
                     strings.add(at.asText());
                 }
             }
+        } else {
+            throw new Exception("data is not array");
         }
 
         for (int i = 0; i < dataListRow + strings.size(); i++) {
@@ -269,7 +288,7 @@ public class ExcelTemplateUtil {
 
     private void createColumn(List<List<String>> lists, LinkedList<String> list, int index, Sheet sourceSheet, Sheet
             targetSheet, int sourceColumnIndex, int dataListRow, LinkedList<JsonNode> variables, JsonNode
-                                      data, HashMap<String, Integer> varLineMap) {
+                                      data, HashMap<String, Integer> varLineMap) throws Exception {
         if (index == dataListRow) {
             copyColumn(sourceSheet, targetSheet, sourceColumnIndex, writeColumnIndex++, list, dataListRow, variables, data, varLineMap);
             return;
