@@ -1,0 +1,44 @@
+[
+  {
+    "year": 2023,
+    "quarter": "Q4",
+    "month": 10,
+    "businessCategory": "ME",
+    "brand": "CHAN SOONG",
+    "product": "ME",
+    "versionId": 1,
+    "classId": 3,
+    "plant": "WIH (F601)",
+    "sumGrade": "E",
+    "sumScore": -33.0,
+    "detailScore": {
+      "1": 1.0,
+      "2": 1.0,
+      "3": -14.0,
+      "4": -1.0,
+      "5": -17.0,
+      "6": -3.0
+    }
+  },
+  {
+    "year": 2023,
+    "quarter": "Q4",
+    "month": 10,
+    "businessCategory": "ME",
+    "brand": "EXAR",
+    "product": "Power IC",
+    "versionId": 1,
+    "classId": 3,
+    "plant": "WIH (F601)",
+    "sumGrade": "D",
+    "sumScore": 9.0,
+    "detailScore": {
+      "1": 5.0,
+      "2": 4.0,
+      "3": 0.0,
+      "4": 0.0,
+      "5": 0.0,
+      "6": 0.0
+    }
+  }
+]

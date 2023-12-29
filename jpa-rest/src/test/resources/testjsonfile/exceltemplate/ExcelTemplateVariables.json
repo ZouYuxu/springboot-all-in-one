@@ -1,0 +1,90 @@
+{
+  "base": [
+    {
+      "name": "brand",
+      "key": "brand"
+    },
+    {
+      "name": "product",
+      "key": "product"
+    }
+  ],
+  "type": [
+    "grade",
+    "point"
+  ],
+  "mon": [
+    10,
+    11,
+    12
+  ],
+  "class": [
+    {
+      "key": "cost",
+      "name": "成本"
+    },
+    {
+      "key": "delivery",
+      "name": "交期"
+    },
+    {
+      "key": "quality",
+      "name": "品質"
+    },
+    {
+      "key": "esg",
+      "name": "永續"
+    },
+    {
+      "key": "design",
+      "name": "設計"
+    }
+  ],
+  "subclass": [
+    {
+      "key": "delivery",
+      "name": "交期"
+    },
+    {
+      "key": "quality",
+      "name": "品質"
+    },
+    {
+      "key": "esg",
+      "name": "永續"
+    }
+  ],
+  "plant": [
+    "F131",
+    "F214",
+    "F132",
+    "F216",
+    "F721"
+  ],
+  "keyName": "work",
+  "level1": {
+    "level2": "yes"
+  },
+  "element": [
+    {
+      "elementId": "1",
+      "elementDescription": "nihk"
+    },
+    {
+      "elementId": "2",
+      "elementDescription": "nihk"
+    },
+    {
+      "elementId": "3",
+      "elementDescription": "nihk"
+    },
+    {
+      "elementId": "4",
+      "elementDescription": "nihk"
+    },
+    {
+      "elementId": "5",
+      "elementDescription": "nihk"
+    }
+  ]
+}

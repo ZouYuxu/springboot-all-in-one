@@ -28,7 +28,9 @@ public class ExcelTemplateUtil {
     // copy column from one sheet to another
     public void copyColumn(Sheet sourceSheet, Sheet targetSheet, int sourceColumnIndex, int targetColumnIndex, List<String> list, int dataListRow, LinkedList<JsonNode> node, JsonNode data, HashMap<String, Integer> varLineMap) throws Exception {
         String sourceValue = sourceSheet.getRow(dataListRow).getCell(sourceColumnIndex).getStringCellValue();
-        sourceValue = sourceValue.substring(1, sourceValue.length() - 1);
+        if (!sourceValue.isEmpty()) {
+            sourceValue = sourceValue.substring(1, sourceValue.length() - 1);
+        }
         String newPath = Pattern.compile("\\[(.*?)\\]").matcher(sourceValue).replaceAll(m -> {
             String group = m.group(1);
             // 在前面解决好路径的问题
@@ -63,11 +65,13 @@ public class ExcelTemplateUtil {
         // to:　data/sub/cost/point/10
         newPath = newPath.replaceAll("\\.", "/");
         // 单字符可选可不选
-        if (newPath.startsWith("//")) {
-            newPath = newPath.substring(1);
-        } else {
-            // to: /sub/cost/point/10
-            newPath = newPath.substring(newPath.indexOf("/"));
+        if (!newPath.isBlank()) {
+            if (newPath.startsWith("//")) {
+                newPath = newPath.substring(1);
+            } else {
+                // to: /sub/cost/point/10
+                newPath = newPath.substring(newPath.indexOf("/"));
+            }
         }
         List<String> strings = new ArrayList<>();
         if (data.isArray()) {
