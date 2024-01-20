@@ -20,8 +20,8 @@ import static cn.hutool.poi.excel.cell.CellUtil.getCellValue;
 @Slf4j
 public class EvaluationAnalyseDownloadService {
 
-    public static final String SOURCE_FILE_PATH = "D:\\workspace\\java\\springboot-all-in-one\\jpa-rest\\src\\main\\resources\\templates\\easy.xlsx";
-    public static final String DEST_FILE_PATH = "D:\\workspace\\java\\springboot-all-in-one\\jpa-rest\\src\\main\\resources\\templates\\dest.xlsx";
+    public static final String SOURCE_FILE_PATH = "E:\\workspace\\java\\springboot-all-in-one\\jpa-rest\\src\\main\\resources\\template\\easy.xlsx";
+    public static final String DEST_FILE_PATH = "E:\\workspace\\java\\springboot-all-in-one\\jpa-rest\\src\\main\\resources\\template\\dest.xlsx";
     public static final String EASY = "easy";
     public static final String WHAT = "what";
 

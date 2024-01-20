@@ -25,7 +25,7 @@ class DownloadTest {
     // target/test-classes/template
     // 路径
     String result = TestFileUtil.getPath() + "template/easyResult.xlsx";
-    String template = TestFileUtil.getPath() + "templates/easy.xlsx";
+    String template = TestFileUtil.getPath() + "template/easy.xlsx";
     EvaluationAnalyseDownloadService evaluationAnalyseDownloadService = new EvaluationAnalyseDownloadService();
     @Test
     void tt() throws Exception {
@@ -122,7 +122,7 @@ class DownloadTest {
     @Test
     public void cloneSheet() throws IOException {
         String result = TestFileUtil.getPath() + "template/easyResult.xlsx";
-        String template = TestFileUtil.getPath() + "templates/easy.xlsx";
+        String template = TestFileUtil.getPath() + "template/easy.xlsx";
         ObjectMapper mapper = new ObjectMapper();
         HashMap jsonNode = mapper.readValue(FileUtil.readUtf8String("jss.json"),HashMap.class);
 

@@ -1,0 +1,16 @@
+{
+  "base": [
+    {
+      "name": "brand",
+      "key": "brand"
+    },
+    {
+      "name": "product",
+      "key": "product"
+    }
+  ],
+  "element": {
+    "elementId": "1",
+    "elementDescription": "nihk"
+  }
+}
