@@ -1,83 +1,151 @@
 package com.example.jparest.utils;
 
+import com.example.jparest.utils.ExcelUtils;
+import com.example.jparest.utils.FileDownloadUtil;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.openxml4j.util.ZipSecureFile;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.InputStream;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Slf4j
+@Component
+@Data
 public class ExcelTemplateUtil {
-    private static int writeColumnIndex = 0; // write dest excel column index
-    private static int mergeColumnIndex = 0; // merge dest excel column index
-    private static List<List<JsonNode>> variableNodes; // 每列所用的变数集合，index行，value：该行的用到的变量集合
+    private int writeColumnIndex = 0; // write dest excel column index
+    private int mergeColumnIndex = 0; // merge dest excel column index
+    private List<List<JsonNode>> variableNodes = new ArrayList<>(); // 每列所用的变数集合，index行，value：该行的用到的变量集合
+    private int dataListRow;
+
+    @Autowired
+    private FileDownloadUtil fileDownloadUtil;
+
+
+    public ResponseEntity<ByteArrayResource> generateExcel(List<?> dataList, String projectName, Map<String, ?> appendVars) {
+        return generateMultiSheetExcel(List.of(dataList), projectName, List.of(appendVars));
+    }
+
+    public <T, F> ResponseEntity<ByteArrayResource> generateMultiSheetExcel(List<List<T>> dataList, String projectName, List<Map<String, F>> appendVarsList) {
+        String step = "";
+        step = "[1.0].Read template";
+
+        ObjectMapper mapper = JsonUtils.mapper;
+
+
+        try (InputStream templateStream = new ClassPathResource(ExcelUtils.TEMPLATE + File.separator + projectName + "File.xlsx").getInputStream();
+             InputStream inputStream = new ClassPathResource(ExcelUtils.JSON + File.separator + projectName + "Vars.json").getInputStream();
+             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+             XSSFWorkbook wb = new XSSFWorkbook(templateStream);
+             XSSFWorkbook newBook = new XSSFWorkbook();) {
+
+            JsonNode variables = mapper.readTree(inputStream);
+
+
+            XSSFSheet sheet = wb.getSheetAt(0);
+
+            for (int i = 0; i < dataList.size(); i++) {
+                List<T> data = dataList.get(i);
+                Map<String, F> appendVars = appendVarsList.get(i);
+                JsonNode dataNode = mapper.valueToTree(data);
+                ObjectNode nodes = mapper.valueToTree(appendVars);
+                ((ObjectNode) variables).setAll(nodes);
+
+                step = "[2.0].Read the template and start writing Excel";
+
+                XSSFSheet newSheet = newBook.createSheet();
+
+                fillTemplate(sheet, newSheet, variables, dataNode);
+                ZipSecureFile.setMinInflateRatio(-1.0d);
+            }
+
+            newBook.write(outputStream);
+            return fileDownloadUtil.downloadFile(outputStream, projectName);
+
+        } catch (Exception e) {
+            throw new MyExceptionUtil(step + "生成Excel发生错误！", e);
+        }
+    }
 
     // copy column from one sheet to another
-    public void copyColumn(Sheet sourceSheet, Sheet targetSheet, int sourceColumnIndex, int targetColumnIndex, List<String> list, int dataListRow, LinkedList<JsonNode> node, JsonNode data, HashMap<String, Integer> varLineMap) {
-        int i = 0;
-        List<String> ss = List.of("我真的", "kusi");
-
-        for (; i < dataListRow; i++) {
-            boolean flag = i >= dataListRow;
-            int index = i - dataListRow;
-            Row sourceRow = sourceSheet.getRow(flag ? dataListRow : i);
-//            sourceSheet.addMergedRegion(new CellRangeAddress())
-            Row targetRow = targetSheet.getRow(i);
-            String newValue = flag ? ss.get(index) : list.get(i);
-            // fix bug：brand column missing
-            if (targetRow == null) {
-                targetRow = targetSheet.createRow(i);
-            }
-            if (sourceRow != null) {
-                Cell sourceCell = sourceRow.getCell(sourceColumnIndex);
-                Cell newCell = targetRow.createCell(targetColumnIndex);
-                ExcelUtils.copyCell(sourceCell, newCell, newValue);
-            }
-        }
-
-
+    public void copyColumn(Sheet sourceSheet, Sheet targetSheet, int sourceColumnIndex, int targetColumnIndex, List<String> list, int dataListRow, LinkedList<JsonNode> node, JsonNode data, HashMap<String, Integer> varLineMap) throws Exception {
         String sourceValue = sourceSheet.getRow(dataListRow).getCell(sourceColumnIndex).getStringCellValue();
-        sourceValue = sourceValue.substring(1, sourceValue.length() - 1);
+        if (!sourceValue.isEmpty()) {
+            sourceValue = sourceValue.substring(1, sourceValue.length() - 1);
+        }
         String newPath = Pattern.compile("\\[(.*?)\\]").matcher(sourceValue).replaceAll(m -> {
             String group = m.group(1);
-            // todo 在前面解决好路径的问题
+            // 在前面解决好路径的问题
             group = group.replaceAll("\\.", "/");
             String[] split = group.split("/");
             String variable = split[0];
             String collect = "/" + Arrays.stream(split).skip(1).collect(Collectors.joining("/"));
 //            collect =
+            if (!varLineMap.containsKey(variable)) {
+                throw new NullPointerException(String.format("%s is not exist in column variables", variable));
+            }
             Integer integer = varLineMap.get(variable);
             JsonNode jsonNode = node.get(integer);
             String text;
             if (jsonNode.isObject()) {
-                text = jsonNode.at(collect).asText();
+                JsonNode at = jsonNode.at(collect);
+                if (at.isMissingNode()) {
+                    throw new NullPointerException(String.format("%s is not exist in variables %s", collect, jsonNode));
+                } else {
+                    text = at.asText();
+                }
             } else {
                 text = jsonNode.asText();
             }
-            System.out.println(text);
             return "/" + text;
         });
 
         // to:　data/sub/cost/point/10
         newPath = newPath.replaceAll("\\.", "/");
-        // to: /sub/cost/point/10
-        newPath = newPath.substring(newPath.indexOf("/"));
+        // 单字符可选可不选
+        if (!newPath.isBlank()) {
+            if (newPath.startsWith("//")) {
+                newPath = newPath.substring(1);
+            } else {
+                // to: /sub/cost/point/10
+                newPath = newPath.substring(newPath.indexOf("/"));
+            }
+        }
         List<String> strings = new ArrayList<>();
         if (data.isArray()) {
             for (JsonNode item : data) {
                 JsonNode at = item.at(newPath);
-                strings.add(at.asText());
+                if (at.isMissingNode() || at.isNull()) {
+                    strings.add("");
+                } else {
+                    strings.add(at.asText());
+                }
             }
+        } else {
+            throw new Exception("data is not array");
         }
-        for (; i < dataListRow + strings.size(); i++) {
+
+        for (int i = 0; i < dataListRow + strings.size(); i++) {
             boolean flag = i >= dataListRow;
             int index = i - dataListRow;
             Row sourceRow = sourceSheet.getRow(flag ? dataListRow : i);
@@ -96,8 +164,10 @@ public class ExcelTemplateUtil {
     }
 
 
-    public void fillTemplate(XSSFSheet sheet, XSSFSheet destSheet, JsonNode variables, JsonNode data) {
-        int dataListRow = 0;
+    public void fillTemplate(XSSFSheet sheet, XSSFSheet destSheet, JsonNode variables, JsonNode data) throws Exception {
+        dataListRow = 0;
+        writeColumnIndex = 0;
+        mergeColumnIndex = 0;
         List<CellRangeAddress> mergedRegions = sheet.getMergedRegions();
         // 先列后行，这样可以方便生成
         for (int columnIndex = 0; columnIndex < sheet.getRow(0).getLastCellNum(); columnIndex++) {
@@ -111,60 +181,13 @@ public class ExcelTemplateUtil {
             variableNodes = new ArrayList<>();
             for (int rowIndex = 0; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
                 XSSFRow row = sheet.getRow(rowIndex);
-                if (row != null) {
-                    Cell cell = row.getCell(columnIndex);
-
-                    if (cell != null) {
-                        String value = ExcelUtils.getCellValue(cell);
-
-                        // 变量，需要替换
-                        if (value.startsWith("{")) {
-
-                            String variable = value.substring(1, value.length() - 1);
-
-                            if (variable.contains("[")) {
-                                dataListRow = rowIndex;
-
-                            } else {
-                                String[] split = variable.split("\\.");
-                                String firstVariable = split[0];
-                                String others = variable.replaceFirst(firstVariable + ".", "");
-
-                                // 表示数组
-                                JsonNode arr = variables.get(firstVariable);
-                                if (arr == null) {
-                                    continue;
-                                }
-                                if (arr.isArray()) {
-                                    ArrayList<String> strings = new ArrayList<>();
-                                    ArrayList<JsonNode> tempNodes = new ArrayList<>();
-                                    for (JsonNode jsonNode : arr) {
-                                        String text;
-                                        if (jsonNode.isObject()) {
-                                            text = jsonNode.findPath(others).asText();
-                                        } else {
-                                            text = jsonNode.asText();
-                                        }
-                                        varIndexMap.put(firstVariable, rowIndex);
-                                        tempNodes.add(jsonNode);
-                                        strings.add(text);
-                                    }
-                                    variableNodes.add(tempNodes);
-                                    lists.add(strings);
-                                } else {
-                                    variableNodes.add(placeholderNodes);
-                                    lists.add(List.of(value));
-                                }
-                                log.info("{} --- {}", firstVariable, variable);
-                            }
-                        } else {
-                            variableNodes.add(placeholderNodes);
-                            lists.add(List.of(value));
-                        }
-                        // 输出单元格内容
-                        log.info("[{}, {}]: {}", rowIndex, columnIndex, value);
-                    }
+                Cell cell = row.getCell(columnIndex);
+                if (cell == null) {
+                    break;
                 }
+                String value = ExcelUtils.getCellValue(cell);
+
+                readVariables(variables, value, rowIndex, varIndexMap, lists, placeholderNodes);
             }
 
             createColumn(lists, new LinkedList<>(), 0, sheet, destSheet, columnIndex, dataListRow, new LinkedList<>(), data, varIndexMap);
@@ -179,6 +202,90 @@ public class ExcelTemplateUtil {
         }
     }
 
+    public void readVariables(JsonNode variables, String value, int rowIndex, HashMap<String, Integer> varIndexMap, List<List<String>> lists, List<JsonNode> placeholderNodes) throws Exception {
+        // 变量，需要替换
+        if (value.startsWith("{")) {
+
+            String variable = value.substring(1, value.length() - 1);
+
+            if (variable.contains("[")) {
+                dataListRow = rowIndex;
+                // fix: 单行表头的时候报错
+                lists.add(List.of(value));
+            } else {
+                ArrayList<String> strings = new ArrayList<>();
+                ArrayList<JsonNode> tempNodes = new ArrayList<>();
+                String[] split = variable.split("\\.");
+                findValue(variables, rowIndex, varIndexMap, strings, tempNodes, split, 0);
+                variableNodes.add(tempNodes);
+                lists.add(strings);
+            }
+        } else {
+            variableNodes.add(placeholderNodes);
+            lists.add(List.of(value));
+        }
+    }
+
+    void findValue(JsonNode variable, int rowIndex, HashMap<String, Integer> varIndexMap, ArrayList<String> strings, ArrayList<JsonNode> tempNodes, String[] split, int index) throws Exception {
+        findValue(variable, rowIndex, varIndexMap, strings, tempNodes, split, index, "");
+    }
+
+    private void findValue(JsonNode variable, int rowIndex, HashMap<String, Integer> varIndexMap, ArrayList<String> strings, ArrayList<JsonNode> tempNodes, String[] split, int index, String path) throws Exception {
+        // 表示数组
+        if (variable == null) {
+            throw new Exception(path + " is not exist in variables");
+        }
+        boolean isLast = index == split.length - 1;
+        boolean isLastPlus1 = index == split.length;
+        if (isLastPlus1) {
+            if (variable.isValueNode()) {
+                strings.add(variable.asText());
+            } else if (variable.isArray()) {
+                // 字串数组，就都保存起来
+                boolean areAllValue = true;
+                ArrayList<String> temp = new ArrayList<>();
+                ArrayList<JsonNode> tempNode = new ArrayList<>();
+
+                for (JsonNode jsonNode : variable) {
+                    if (jsonNode.isValueNode()) {
+                        tempNode.add(jsonNode);
+                        temp.add(jsonNode.asText());
+                    } else {
+                        areAllValue = false;
+                    }
+                }
+                // 先清空，再加上temp nodes
+                if (areAllValue) {
+                    tempNodes.clear();
+                    tempNodes.addAll(tempNode);
+                    strings.addAll(temp);
+                }
+            }
+            return;
+        }
+        String var = split[index];
+//        else
+        if (index == 0) {
+            varIndexMap.put(var, rowIndex);
+        }
+
+        if (variable.isArray()) {
+            int i = 0;
+            for (JsonNode jsonNode : variable) {
+                if (isLast) {
+                    tempNodes.add(jsonNode);
+                }
+                findValue(jsonNode.get(var), rowIndex, varIndexMap, strings, tempNodes, split, index + 1, path + "/" + (i++) + "/" + var);
+
+            }
+        } else {
+            if (isLast) {
+                tempNodes.add(variable);
+            }
+            findValue(variable.get(var), rowIndex, varIndexMap, strings, tempNodes, split, index + 1, path + "/" + var);
+        }
+
+    }
 
     private int createMerge(int rowIndex, List<List<String>> lists, int dataListRow, int columnIndex, XSSFSheet destSheet, Optional<CellRangeAddress> rangeAddress) {
         List<String> rowVars = lists.get(rowIndex);
@@ -222,7 +329,6 @@ public class ExcelTemplateUtil {
                     break;
                 }
                 destSheet.addMergedRegion(new CellRangeAddress(rowIndex, lastRowIndex, firstCol, lastCol));
-                log.info("{}-{}: {}", rowIndex, sizeIndex, nextSize);
             } else {
                 if (rowIndex != 0 && rowVarSize == 1 && rowVars.get(0).isEmpty()) {
                     break;
@@ -244,7 +350,7 @@ public class ExcelTemplateUtil {
 
     private void createColumn(List<List<String>> lists, LinkedList<String> list, int index, Sheet sourceSheet, Sheet
             targetSheet, int sourceColumnIndex, int dataListRow, LinkedList<JsonNode> variables, JsonNode
-                                      data, HashMap<String, Integer> varLineMap) {
+                                      data, HashMap<String, Integer> varLineMap) throws Exception {
         if (index == dataListRow) {
             copyColumn(sourceSheet, targetSheet, sourceColumnIndex, writeColumnIndex++, list, dataListRow, variables, data, varLineMap);
             return;
