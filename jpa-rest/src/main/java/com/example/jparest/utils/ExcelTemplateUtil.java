@@ -1,7 +1,5 @@
 package com.example.jparest.utils;
 
-import com.example.jparest.utils.ExcelUtils;
-import com.example.jparest.utils.FileDownloadUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -13,6 +11,7 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -40,6 +39,7 @@ public class ExcelTemplateUtil {
 
     @Autowired
     private FileDownloadUtil fileDownloadUtil;
+    private ArrayList<XSSFCellStyle> styles;
 
 
     public ResponseEntity<ByteArrayResource> generateExcel(List<?> dataList, String projectName, Map<String, ?> appendVars) throws MyExceptionUtil {
@@ -148,18 +148,15 @@ public class ExcelTemplateUtil {
         for (int i = 0; i < dataListRow + strings.size(); i++) {
             boolean flag = i >= dataListRow;
             int index = i - dataListRow;
-            Row sourceRow = sourceSheet.getRow(flag ? dataListRow : i);
+            int rownum = flag ? dataListRow : i;
             Row targetRow = targetSheet.getRow(i);
             String newValue = flag ? strings.get(index) : list.get(i);
             // fix bug：brand column missing
             if (targetRow == null) {
                 targetRow = targetSheet.createRow(i);
             }
-            if (sourceRow != null) {
-                Cell sourceCell = sourceRow.getCell(sourceColumnIndex);
-                Cell newCell = targetRow.createCell(targetColumnIndex);
-                ExcelUtils.copyCell(sourceCell, newCell, newValue);
-            }
+            Cell newCell = targetRow.createCell(targetColumnIndex);
+            ExcelUtils.copyCell(newCell, newValue, styles.get(rownum));
         }
     }
 
@@ -168,6 +165,9 @@ public class ExcelTemplateUtil {
         dataListRow = 0;
         writeColumnIndex = 0;
         mergeColumnIndex = 0;
+        if (sheet == null) {
+            throw new Exception("sheet not found");
+        }
         List<CellRangeAddress> mergedRegions = sheet.getMergedRegions();
         // 先列后行，这样可以方便生成
         for (int columnIndex = 0; columnIndex < sheet.getRow(0).getLastCellNum(); columnIndex++) {
@@ -179,27 +179,39 @@ public class ExcelTemplateUtil {
             List<JsonNode> placeholderNodes = List.of(variableNode);
             List<List<String>> lists = new ArrayList<>();
             variableNodes = new ArrayList<>();
+            styles = new ArrayList<>();
             for (int rowIndex = 0; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
                 XSSFRow row = sheet.getRow(rowIndex);
                 Cell cell = row.getCell(columnIndex);
                 if (cell == null) {
                     break;
                 }
+                XSSFWorkbook destWb = destSheet.getWorkbook();
+                XSSFCellStyle cellStyle = destWb.createCellStyle();
+                cellStyle.cloneStyleFrom(cell.getCellStyle());
+                styles.add(cellStyle);
                 String value = ExcelUtils.getCellValue(cell);
-
                 readVariables(variables, value, rowIndex, varIndexMap, lists, placeholderNodes);
             }
 
+//            Sw.start("createColumn" + columnIndex);
             createColumn(lists, new LinkedList<>(), 0, sheet, destSheet, columnIndex, dataListRow, new LinkedList<>(), data, varIndexMap);
+//            Sw.stop();
 
             createMerge(0, lists, dataListRow, columnIndex, destSheet, rangeAddress);
         }
+
+
+//        Sw.start("自动列宽");
 
         // 自动列宽
         for (int i = 0; i < writeColumnIndex; i++) {
             destSheet.autoSizeColumn(i, true);
             destSheet.setColumnWidth(i, destSheet.getColumnWidth(i) * 11 / 10);
         }
+//        Sw.stop();
+
+        Sw.prettyPrint();
     }
 
     public void readVariables(JsonNode variables, String value, int rowIndex, HashMap<String, Integer> varIndexMap, List<List<String>> lists, List<JsonNode> placeholderNodes) throws Exception {

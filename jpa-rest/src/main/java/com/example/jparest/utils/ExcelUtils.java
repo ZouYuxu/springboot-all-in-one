@@ -73,15 +73,11 @@ public class ExcelUtils<T> {
         }
     }
 
-    public static void copyCell(Cell sourceCell, Cell targetCell, String value) {
-        if (sourceCell == null || targetCell == null) {
-            return;
-        }
+    public static void copyCell(Cell targetCell, String value, XSSFCellStyle style) {
         // 复制单元格样式
-        CellStyle newCellStyle = targetCell.getSheet().getWorkbook().createCellStyle();
-        newCellStyle.cloneStyleFrom(sourceCell.getCellStyle());
-        targetCell.setCellStyle(newCellStyle);
-        targetCell.setCellValue(value);
+//        CellStyle newCellStyle = targetCell.getSheet().getWorkbook().createCellStyle();
+//        newCellStyle.cloneStyleFrom(sourceCell.getCellStyle());
+        targetCell.setCellStyle(style);
 
         if (NumberUtil.isDouble(value)) {
             targetCell.setCellValue(NumberUtil.parseDouble(value));
@@ -90,6 +86,10 @@ public class ExcelUtils<T> {
         } else {
             targetCell.setCellValue(value);
         }
+    }
+
+    public static void getCellStyle() {
+
     }
 
     public static void setCellStringValue(Cell cell, String value) {

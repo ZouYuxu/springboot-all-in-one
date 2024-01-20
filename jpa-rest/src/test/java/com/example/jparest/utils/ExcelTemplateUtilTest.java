@@ -52,6 +52,7 @@ class ExcelTemplateUtilTest {
 
     @BeforeEach
     void setUp() throws IOException {
+//        Sw.start("setup");
         MockitoAnnotations.openMocks(this);
         variables = JsonUtils.readTree("testjsonfile/exceltemplate/ExcelTemplateVariables.json");
         array = JsonUtils.readTree("testjsonfile/exceltemplate/test.json");
@@ -64,6 +65,7 @@ class ExcelTemplateUtilTest {
         wb = new XSSFWorkbook(template);
         newBook = new XSSFWorkbook();
         destSheet = newBook.createSheet();
+//        Sw.stop();
     }
 
     //    @Test
