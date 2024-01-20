@@ -10,7 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 
 public class JsonUtils {
-    private static ObjectMapper mapper = new ObjectMapper();
+    public static ObjectMapper mapper = new ObjectMapper();
 
 //    public JsonUtils() {
 //        mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);

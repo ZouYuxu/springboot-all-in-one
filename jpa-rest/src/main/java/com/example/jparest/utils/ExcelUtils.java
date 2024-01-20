@@ -12,6 +12,7 @@ import java.util.Iterator;
 public class ExcelUtils<T> {
 
     public static final String TEMPLATE = "template";
+    public static final String JSON = "json";
 
 
     private Class<T> eClass;
