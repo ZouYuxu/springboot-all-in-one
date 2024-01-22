@@ -184,7 +184,7 @@ class ExcelTemplateUtilTest {
     @Test
     void testFillTemplateWithBlank() throws Exception {
         XSSFSheet sheet = wb.getSheet("easy_blank");
-        excelTemplateUtil.fillTemplate(sheet, destSheet, variables, data);
+        assertThrows(Exception.class, () -> excelTemplateUtil.fillTemplate(sheet, destSheet, variables, data));
         newBook.write(outputStream);
     }
 
