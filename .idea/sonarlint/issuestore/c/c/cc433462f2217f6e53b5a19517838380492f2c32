@@ -1,0 +1,10 @@
+
+U
+java:S1854"?Remove this useless assignment to local variable "columnIndex".(¹èŠ‘
+F
+java:S1481"0Remove this unused "columnIndex" local variable.(¹èŠ‘
+A
+java:S1481&"&Remove this unused "s" local variable.(î÷øûÿÿÿÿ
+V	java:S125+"<This block of commented-out lines of code should be removed.(‡à‘Ãüÿÿÿÿ
+Q	java:S1250"<This block of commented-out lines of code should be removed.(£–‘°
+Q	java:S1257"<This block of commented-out lines of code should be removed.(˜úí

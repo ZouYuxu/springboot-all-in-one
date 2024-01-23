@@ -1,0 +1,31 @@
+
+g	java:S112d"FDefine and throw a dedicated exception instead of using a generic one.(ŞÖÛıÿÿÿÿ8Æäë³Ñ1
+c	java:S112Ÿ"FDefine and throw a dedicated exception instead of using a generic one.(Ÿ¿Ğ¬8å×ÁÍ1
+b	java:S112i"FDefine and throw a dedicated exception instead of using a generic one.(“ßœè8ë×ÁÍ1
+h	java:S112ú"FDefine and throw a dedicated exception instead of using a generic one.(ÍÔ÷›ÿÿÿÿÿ8Íäë³Ñ1
+v	java:S135Ì"YReduce the total number of break and continue statements in this loop to use at most one.(ÅÔ‡Ò8‚×ÁÍ1
+‚
+java:S1319i"eThe type of "node" should be an interface such as "List" rather than the implementation "LinkedList".(“ßœè8Öäë³Ñ1
+„
+java:S1319i"gThe type of "varLineMap" should be an interface such as "Map" rather than the implementation "HashMap".(“ßœè8®‚×ÁÍ1
+†
+java:S1319Û"hThe type of "varIndexMap" should be an interface such as "Map" rather than the implementation "HashMap".(ò×ªÒ8×äë³Ñ1
+X	java:S107i"<Method has 9 parameters, which is greater than 7 authorized.(“ßœè8Øóë³Ñ1
+^	java:S107÷"<Method has 8 parameters, which is greater than 7 authorized.(œ¾÷Üüÿÿÿÿ8Ş ×ÁÍ1
+_	java:S107í"=Method has 10 parameters, which is greater than 7 authorized.(â²Ô³úÿÿÿÿ8Ş ×ÁÍ1
+o
+java:S3776i"RRefactor this method to reduce its Cognitive Complexity from 32 to the 15 allowed.(“ßœè8üóë³Ñ1
+H
+java:S1075t"&Remove this hard-coded path-delimiter.(”­…ïùÿÿÿÿ8„ôë³Ñ1
+I
+java:S1075†"&Remove this hard-coded path-delimiter.(ÿ°íÚúÿÿÿÿ8…ôë³Ñ1
+e
+java:S5361q"HReplace this call to "replaceAll()" by a call to the "replace()" method.(ŒŠ²­8‹ôë³Ñ1
+f
+java:S5361Š"HReplace this call to "replaceAll()" by a call to the "replace()" method.(‚¢øÖ8”ôë³Ñ1
+u
+java:S3776÷"RRefactor this method to reduce its Cognitive Complexity from 26 to the 15 allowed.(œ¾÷Üüÿÿÿÿ8‡¤×ÁÍ1
+X
+java:S6213˜":Rename this variable to not match a restricted identifier.(å•€8œ¤×ÁÍ1
+u
+java:S3776°"RRefactor this method to reduce its Cognitive Complexity from 23 to the 15 allowed.(ÑÆÑËıÿÿÿÿ8§¤×ÁÍ1

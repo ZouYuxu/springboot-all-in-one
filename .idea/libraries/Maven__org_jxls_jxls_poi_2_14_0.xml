@@ -1,13 +1,14 @@
 <component name="libraryTable">
-  <library name="Maven: org.jxls:jxls-poi:2.14.0">
+  <library name="Maven: org.jxls:jxls-poi:2.14.0" type="java-imported" external-system-id="Maven">
+    <properties groupId="org.jxls" artifactId="jxls-poi" version="2.14.0" />
     <CLASSES>
-      <root url="jar://$MAVEN_REPOSITORY$/org/jxls/jxls-poi/2.14.0/jxls-poi-2.14.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../../apache-maven-3.8.6/repository/org/jxls/jxls-poi/2.14.0/jxls-poi-2.14.0.jar!/" />
     </CLASSES>
     <JAVADOC>
-      <root url="jar://$MAVEN_REPOSITORY$/org/jxls/jxls-poi/2.14.0/jxls-poi-2.14.0-javadoc.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../../apache-maven-3.8.6/repository/org/jxls/jxls-poi/2.14.0/jxls-poi-2.14.0-javadoc.jar!/" />
     </JAVADOC>
     <SOURCES>
-      <root url="jar://$MAVEN_REPOSITORY$/org/jxls/jxls-poi/2.14.0/jxls-poi-2.14.0-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../../apache-maven-3.8.6/repository/org/jxls/jxls-poi/2.14.0/jxls-poi-2.14.0-sources.jar!/" />
     </SOURCES>
   </library>
 </component>

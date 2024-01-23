@@ -1,0 +1,10 @@
+
+o
+java:S1104"RMake mapper a static final constant or non-public and provide accessors if needed.(Ş—„8Œëğ³Ñ1
+I
+java:S1444",Make this "public static mapper" field final(Ş—„8ëğ³Ñ1
+\
+java:S1118":Add a private constructor to hide the implicit public one.(ôÖ®¬ùÿÿÿÿ8¶º×ÁÍ1
+X	java:S125"<This block of commented-out lines of code should be removed.(Ã™È8Ñëğ³Ñ1
+N
+java:S1172*",Remove this unused method parameter "clazz".(áæ­ùÿÿÿÿ8Ùëğ³Ñ1
