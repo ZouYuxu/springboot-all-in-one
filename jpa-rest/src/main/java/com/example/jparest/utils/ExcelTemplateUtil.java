@@ -42,11 +42,11 @@ public class ExcelTemplateUtil {
     private ArrayList<XSSFCellStyle> styles;
 
 
-    public ResponseEntity<ByteArrayResource> generateExcel(List<?> dataList, String projectName, Map<String, ?> appendVars) throws MyExceptionUtil {
+    public ResponseEntity<ByteArrayResource> generateExcel(List<?> dataList, String projectName, Map<String, ?> appendVars) {
         return generateMultiSheetExcel(List.of(dataList), projectName, List.of(appendVars));
     }
 
-    public <T, F> ResponseEntity<ByteArrayResource> generateMultiSheetExcel(List<List<T>> dataList, String projectName, List<Map<String, F>> appendVarsList) throws MyExceptionUtil {
+    public <T, F> ResponseEntity<ByteArrayResource> generateMultiSheetExcel(List<List<T>> dataList, String projectName, List<Map<String, F>> appendVarsList) {
         String step = "";
         step = "[1.0].Read template";
 
