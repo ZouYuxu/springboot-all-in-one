@@ -194,24 +194,16 @@ public class ExcelTemplateUtil {
                 readVariables(variables, value, rowIndex, varIndexMap, lists, placeholderNodes);
             }
 
-//            Sw.start("createColumn" + columnIndex);
             createColumn(lists, new LinkedList<>(), 0, sheet, destSheet, columnIndex, dataListRow, new LinkedList<>(), data, varIndexMap);
-//            Sw.stop();
 
             createMerge(0, lists, dataListRow, columnIndex, destSheet, rangeAddress);
         }
-
-
-//        Sw.start("自动列宽");
 
         // 自动列宽
         for (int i = 0; i < writeColumnIndex; i++) {
             destSheet.autoSizeColumn(i, true);
             destSheet.setColumnWidth(i, destSheet.getColumnWidth(i) * 11 / 10);
         }
-//        Sw.stop();
-
-        Sw.prettyPrint();
     }
 
     public void readVariables(JsonNode variables, String value, int rowIndex, HashMap<String, Integer> varIndexMap, List<List<String>> lists, List<JsonNode> placeholderNodes) throws Exception {
@@ -227,6 +219,9 @@ public class ExcelTemplateUtil {
             } else {
                 ArrayList<String> strings = new ArrayList<>();
                 ArrayList<JsonNode> tempNodes = new ArrayList<>();
+                if (variable.startsWith(".")) {
+                    variable = variable.substring(1);
+                }
                 String[] split = variable.split("\\.");
                 findValue(variables, rowIndex, varIndexMap, strings, tempNodes, split, 0);
                 variableNodes.add(tempNodes);

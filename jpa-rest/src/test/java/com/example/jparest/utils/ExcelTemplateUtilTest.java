@@ -1,7 +1,6 @@
 package com.example.jparest.utils;
 
 import cn.hutool.core.io.resource.ResourceUtil;
-import com.example.jparest.utils.ExcelTemplateUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -49,23 +48,25 @@ class ExcelTemplateUtilTest {
     private FileOutputStream outputStream;
     private XSSFWorkbook newBook;
     private XSSFSheet destSheet;
+    private InputStream batchTemplate;
+    private JsonNode batchVariables;
 
     @BeforeEach
     void setUp() throws IOException {
-//        Sw.start("setup");
         MockitoAnnotations.openMocks(this);
         variables = JsonUtils.readTree("testjsonfile/exceltemplate/ExcelTemplateVariables.json");
+        batchVariables = JsonUtils.readTree("testjsonfile/exceltemplate/EvaluationBatchQuestionExcelData.json");
         array = JsonUtils.readTree("testjsonfile/exceltemplate/test.json");
         data = JsonUtils.readTree("testjsonfile/exceltemplate/ExcelTemplateData.json");
         evaluationContentAggData = JsonUtils.readTree("testjsonfile/exceltemplate/EvaluationContentAggData.json");
         evaluationContentAggVar = JsonUtils.readTree("testjsonfile/exceltemplate/EvaluationAnalyseVars.json");
         variableNodes = new ArrayList<>();
         template = ResourceUtil.getStream("template/ExcelTemplate.xlsx");
+        batchTemplate = ResourceUtil.getStream("template/EvaluationBatchQuestionFile.xlsx");
         outputStream = new FileOutputStream(DEST_PATH);
         wb = new XSSFWorkbook(template);
         newBook = new XSSFWorkbook();
         destSheet = newBook.createSheet();
-//        Sw.stop();
     }
 
     //    @Test
@@ -112,6 +113,17 @@ class ExcelTemplateUtilTest {
         List<List<JsonNode>> variableNodes = excelTemplateUtil.getVariableNodes();
         assertEquals(List.of("yes"), strings);
         assertEquals(0, varIndexMap.get("level1"));
+    }
+
+
+    @Test
+    void readMultipleValues() throws Exception {
+        excelTemplateUtil.readVariables(batchVariables, "{elements.elementDescription}", 0, varIndexMap, lists, placeholderNodes);
+        excelTemplateUtil.readVariables(batchVariables, "{elements[elements.elementId].questions.questionDescription}", 1, varIndexMap, lists, placeholderNodes);
+        List<String> strings = lists.get(0);
+        List<List<JsonNode>> variableNodes = excelTemplateUtil.getVariableNodes();
+        assertEquals(List.of("ME Material 1","ME Material 2"), strings);
+        assertEquals(0, varIndexMap.get("elements"));
     }
 
     @Test
@@ -184,7 +196,7 @@ class ExcelTemplateUtilTest {
     @Test
     void testFillTemplateWithBlank() throws Exception {
         XSSFSheet sheet = wb.getSheet("easy_blank");
-        assertThrows(Exception.class, () -> excelTemplateUtil.fillTemplate(sheet, destSheet, variables, data));
+        excelTemplateUtil.fillTemplate(sheet, destSheet, variables, data);
         newBook.write(outputStream);
     }
 
@@ -192,6 +204,14 @@ class ExcelTemplateUtilTest {
     void testFillEvaluationContentAgg() throws Exception {
         XSSFSheet sheet = wb.getSheet("EvaluationContent");
         excelTemplateUtil.fillTemplate(sheet, destSheet, variables, evaluationContentAggData);
+        newBook.write(outputStream);
+    }
+
+    @Test
+    void testFillEvaluationBatch() throws Exception {
+        XSSFWorkbook sheets = new XSSFWorkbook(batchTemplate);
+        XSSFSheet sheet = sheets.getSheetAt(0);
+        excelTemplateUtil.fillTemplate(sheet, destSheet, batchVariables, batchVariables);
         newBook.write(outputStream);
     }
 

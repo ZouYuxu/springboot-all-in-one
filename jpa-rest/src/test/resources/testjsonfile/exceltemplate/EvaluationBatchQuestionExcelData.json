@@ -1,0 +1,38 @@
+[
+  {
+    "year": 2023,
+    "quarter": "Q1",
+    "businessCategory": "ME",
+    "scoringType": "ME Material",
+    "classId": 1,
+    "versionId": 1,
+    "month": 1,
+    "brand": "CHAN SOONG",
+    "product": "ME",
+    "plant": "",
+    "elements": [
+      {
+        "elementId": 1,
+        "elementDescription": "ME Material 1",
+        "questions": [
+          {
+            "questionId": 1,
+            "questionDescription": "Question 1",
+            "optionScore": 12
+          }
+        ]
+      },
+      {
+        "elementId": 2,
+        "elementDescription": "ME Material 2",
+        "questions": [
+          {
+            "questionId": 2,
+            "questionDescription": "Question 2",
+            "optionScore": 10
+          }
+        ]
+      }
+    ]
+  }
+]
