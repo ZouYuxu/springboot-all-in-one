@@ -1,0 +1,12 @@
+name: vhang
+
+server:
+  port: 8080
+
+arrs:
+  - vhz
+  - 234
+  - 123
+
+baseDir: c:\windows\system32
+tempDir: ${baseDir}\temp
