@@ -1,0 +1,18 @@
+server:
+  port: 9999
+spring:
+  application:
+    name: trip-gateway
+  cloud:
+    nacon:
+      discovery: # 服务注册中心地址
+        server-addr: 127.0.0.1:8848
+      gateway:
+        routes:
+          - id: trip-service
+            uri: lb://trip-service
+            predicates:
+              - Path=/user/**
+            filters:
+              # 去掉请求路径中的前缀，默认将第一个前缀去掉，例如 /user/login，去掉 /user
+              - StripPrefix=1
